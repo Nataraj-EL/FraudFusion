@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments & virtualenvs
+.venv/
+venv/
+ENV/
+env/
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.vite/
+*.log
+npm-debug.log*
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Environment variables & secrets
+.env
+.env.local
+*.secret
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+*.swp

@@ -1,0 +1,55 @@
+# FraudFusion Risk Configuration Schema & Weights
+
+version: "1.0"
+description: "Unified fraud risk weights and band thresholds"
+
+# Signal group weights must sum to exactly 1.0
+signal_groups:
+  adaptive_friction:
+    code: "AF"
+    name: "Adaptive Friction"
+    weight: 0.45
+    description: "Evaluates step-up authentication, session anomaly, and friction metrics"
+  fund_flow:
+    code: "FF"
+    name: "Fund Flow"
+    weight: 0.35
+    description: "Evaluates velocity, structuring, mule indicators, and transfer patterns"
+  phishing:
+    code: "PH"
+    name: "Phishing"
+    weight: 0.20
+    description: "Evaluates domain spoofing, link urgency, payload similarity, and credential harvesting"
+
+# Factor values are constrained to [0.0, 1.0]
+factor_clipping:
+  min_value: 0.0
+  max_value: 1.0
+
+# 0-100 score bands with boundary inclusive rules
+risk_bands:
+  - band: "Very Low"
+    min_score: 0
+    max_score: 20
+    action: "ALLOW"
+    color: "#10b981"
+  - band: "Low"
+    min_score: 21
+    max_score: 40
+    action: "MONITOR"
+    color: "#3b82f6"
+  - band: "Medium"
+    min_score: 41
+    max_score: 60
+    action: "CHALLENGE"
+    color: "#f59e0b"
+  - band: "High"
+    min_score: 61
+    max_score: 80
+    action: "HOLD"
+    color: "#ef4444"
+  - band: "Critical"
+    min_score: 81
+    max_score: 100
+    action: "BLOCK_AND_REPORT"
+    color: "#991b1b"
