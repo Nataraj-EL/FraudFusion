@@ -7,11 +7,12 @@ import { SignalInspector } from './components/SignalInspector';
 import { RiskAssessmentView } from './components/RiskAssessmentView';
 import { LoginView } from './components/LoginView';
 import { AuditLogView } from './components/AuditLogView';
+import { InvestigationDashboard } from './components/InvestigationDashboard';
 
 export function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  const [activeTab, setActiveTab] = useState('risk');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
     const savedToken = localStorage.getItem('ff_token');
@@ -54,7 +55,6 @@ export function App() {
 
   const isAdmin = user.role === 'Admin';
   const isAnalyst = user.role === 'Analyst' || isAdmin;
-  const isViewer = user.role === 'Viewer';
 
   return (
     <div className="app-container">
@@ -65,7 +65,7 @@ export function App() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.2rem' }}>
               <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                Fraud Fusion Workspace
+                FraudFusion Workspace
               </h1>
               <span className={`badge ${isAdmin ? 'badge-danger' : isAnalyst ? 'badge-warning' : 'badge-info'}`} style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}>
                 {user.role} Role
@@ -77,6 +77,22 @@ export function App() {
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              style={{
+                padding: '0.5rem 0.9rem',
+                backgroundColor: activeTab === 'dashboard' ? 'var(--primary-color)' : 'var(--bg-surface)',
+                color: activeTab === 'dashboard' ? '#ffffff' : 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: '0.82rem',
+              }}
+            >
+              🔍 Dashboard
+            </button>
+
             <button
               onClick={() => setActiveTab('risk')}
               style={{
@@ -180,6 +196,7 @@ export function App() {
           </div>
         </div>
 
+        {activeTab === 'dashboard' && <InvestigationDashboard user={user} token={token} />}
         {activeTab === 'risk' && <RiskAssessmentView user={user} token={token} />}
         {activeTab === 'signals' && <SignalInspector />}
         {activeTab === 'ingestion' && isAnalyst && <IngestionPanel />}

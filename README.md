@@ -214,7 +214,27 @@ npm run build
 - **Milestone 3 Explainable Signal Engines**: Independent AF (AF1-3), FF (FF1-3), and PH (PH1-3) signal evaluation engines with field-specific explanations, externalized YAML factor weights, `POST /api/v1/signals/evaluate` endpoint, and Signal Inspector UI.
 - **Milestone 4 Unified Risk Scoring & Decision Engine**: Consolidated 0–100 risk score, dynamic risk bands and recommended actions, deterministic explainability summary, `POST /api/v1/risk-score` endpoint, and minimal Risk Assessment UI.
 - **Milestone 5 Explainable Reporting & Export**: Modular report service, deterministic STR draft generation for High/Critical bands, JSON/CSV/HTML/PDF exports, SQLite report persistence, `GET /api/v1/reports/{id}` & download endpoints, and interactive Report/Export UI modal.
-- **Milestone 6 RBAC & Audit Trail (Completed)**: Role-based access control (Viewer, Analyst, Admin), lightweight local authentication with salted PBKDF2-HMAC-SHA256 password hashing, signed bearer session tokens, append-only SQLite `audit_logs` table, role-aware API authorization, login/audit views, and security dashboard.
+- **Milestone 6 RBAC & Audit Trail**: Role-based access control (Viewer, Analyst, Admin), lightweight local authentication with salted PBKDF2-HMAC-SHA256 password hashing, signed bearer session tokens, append-only SQLite `audit_logs` table, role-aware API authorization, login/audit views, and security dashboard.
+- **Milestone 7 Analyst Investigation Dashboard (Completed)**: Executive dashboard statistics, searchable & filterable transaction repository, single-transaction investigation modal, SVG fund-flow network topology visualizer, role-aware analyst workflow, and comprehensive automated test suite.
+
+---
+
+## 🔍 Analyst Investigation Workflow
+
+FraudFusion provides a streamlined, minimal investigation experience for fraud analysts and compliance auditors:
+
+1. **Dashboard Overview**:
+   - Executive metrics showing total ingested transactions, risk distribution (Critical, High, Medium, Low, Very Low, Unassessed), and pending items.
+   - Real-time compliance audit activity feed for Analysts and Admins.
+
+2. **Searchable Transaction Table**:
+   - Filter transactions by Risk Band (`Critical`, `High`, `Medium`, `Low`, `Very Low`, `Unassessed`), Transaction ID, or Account ID.
+   - Inspect transaction status, risk score, recommended action, and STR draft availability.
+
+3. **Single-Transaction Investigation View**:
+   - **Risk & Signal Breakdown**: Consolidated 0–100 risk score, AF/FF/PH subscores, triggered anomaly factors, and plain-language math explanations.
+   - **Fund-Flow Visualization**: SVG network diagram rendering origin sender, relay/intermediary nodes, beneficiary target, flow amounts, and dwell/holding times (highlighting suspicious rapid drains and pass-through flow).
+   - **Compliance & Audit Logs**: Transaction-specific append-only audit trail and multi-format report exports (JSON, CSV, HTML, PDF).
 
 ---
 
@@ -253,6 +273,7 @@ FraudFusion captures all critical compliance and operational actions in a tamper
 - `EXPORT_REPORT`: Exporting risk assessments (JSON, CSV, HTML, PDF)
 - `VIEW_AUDIT_LOGS`: Admin retrieval of audit trail records
 - `CREATE_USER` / `LIST_USERS`: Admin user management operations
+- `VIEW_DASHBOARD` / `SEARCH_TRANSACTIONS` / `VIEW_INVESTIGATION` / `VIEW_FUND_FLOW`: Analyst investigation activity
 
 ### Audit Record Schema
 Each audit record captures:
@@ -260,8 +281,9 @@ Each audit record captures:
 - `user`: Account email of the executing user
 - `role`: Role of the user at the time of execution (`viewer`, `analyst`, `admin`)
 - `action`: Specific domain action executed
-- `resource_type`: Type of resource accessed (`TRANSACTION`, `RISK_ENGINE`, `REPORT`, `AUDIT_LOG`, `USER`)
+- `resource_type`: Type of resource accessed (`TRANSACTION`, `RISK_ENGINE`, `REPORT`, `AUDIT_LOG`, `USER`, `INVESTIGATION`, `FUND_FLOW`)
 - `transaction_id`: Associated transaction ID (when applicable)
 - `status`: Outcome (`SUCCESS`, `FAILURE`, `UNAUTHORIZED`)
 - `metadata`: Supplemental details (e.g. risk score, export format, user created)
+
 
