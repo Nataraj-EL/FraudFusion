@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
-export function IngestionPanel() {
+export function IngestionPanel({ token }) {
+  // Batch File Ingestion State
   const [file, setFile] = useState(null);
   const [sourceType, setSourceType] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -9,10 +10,17 @@ export function IngestionPanel() {
   const [recentBatches, setRecentBatches] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  // Statement OCR Ingestion State
+  const [stmtFile, setStmtFile] = useState(null);
+  const [stmtUploading, setStmtUploading] = useState(false);
+  const [stmtError, setStmtError] = useState(null);
+  const [stmtResult, setStmtResult] = useState(null);
+
   const fetchBatches = async () => {
     setLoadingHistory(true);
     try {
-      const res = await fetch('/api/v1/ingest/batches?limit=10');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch('/api/v1/ingest/batches?limit=10', { headers });
       if (res.ok) {
         const data = await res.json();
         setRecentBatches(data);
@@ -38,7 +46,7 @@ export function IngestionPanel() {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!file) {
-      setUploadError('Please select a file to upload');
+      setUploadError('Please select a JSON/CSV file to upload');
       return;
     }
 
@@ -52,8 +60,10 @@ export function IngestionPanel() {
     }
 
     try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await fetch('/api/v1/ingest/upload', {
         method: 'POST',
+        headers,
         body: formData,
       });
 
@@ -65,7 +75,6 @@ export function IngestionPanel() {
       const result = await res.json();
       setLastResult(result);
       setFile(null);
-      // Reset file input
       const fileInput = document.getElementById('ingest-file-input');
       if (fileInput) fileInput.value = '';
 
@@ -77,11 +86,64 @@ export function IngestionPanel() {
     }
   };
 
+  const handleStmtUpload = async (e) => {
+    e.preventDefault();
+    if (!stmtFile) {
+      setStmtError('Please select a PDF or Image bank statement');
+      return;
+    }
+
+    setStmtUploading(true);
+    setStmtError(null);
+
+    const formData = new FormData();
+    formData.append('file', stmtFile);
+
+    try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch('/api/v1/ingest/statement', {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || errData.message || `Statement OCR failed (${res.status})`);
+      }
+
+      const result = await res.json();
+      setStmtResult(result);
+      setStmtFile(null);
+      const stmtInput = document.getElementById('stmt-file-input');
+      if (stmtInput) stmtInput.value = '';
+
+      fetchBatches();
+    } catch (err) {
+      setStmtError(err.message || 'Error processing statement file');
+    } finally {
+      setStmtUploading(false);
+    }
+  };
+
+  const getConfidenceBadge = (level) => {
+    switch (level) {
+      case 'HIGH':
+        return 'badge-success';
+      case 'MEDIUM':
+        return 'badge-info';
+      case 'LOW':
+        return 'badge-warning';
+      default:
+        return 'badge-danger';
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Upload Form Card */}
+      {/* SECTION 1: Batch File Ingestion Card */}
       <div className="card">
-        <div className="card-title">Ingest Data Batch</div>
+        <div className="card-title">Ingest Data Batch (JSON / CSV)</div>
         <div className="card-subtitle">
           Upload Adaptive Friction (JSON), Fund Flow (CSV), or Phishing (JSON) batch files
         </div>
@@ -165,6 +227,147 @@ export function IngestionPanel() {
             </div>
           )}
         </form>
+      </div>
+
+      {/* SECTION 2: STATEMENT ANALYSIS (OPTIONAL - PDF / IMAGE OCR) */}
+      <div className="card" style={{ borderLeft: '4px solid #8b5cf6' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div className="card-title">📄 Bank Statement OCR Ingestion (Optional)</div>
+            <div className="card-subtitle">
+              Extract transaction data from PDF or Image statements using PyMuPDF and Tesseract OCR.
+            </div>
+          </div>
+          <span className="badge badge-info" style={{ fontSize: '0.75rem' }}>
+            PDF & Image OCR
+          </span>
+        </div>
+
+        <form onSubmit={handleStmtUpload} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ flex: 1, minWidth: '240px' }}>
+              <label
+                htmlFor="stmt-file-input"
+                style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-secondary)' }}
+              >
+                Statement File (.pdf, .png, .jpg, .jpeg, .tiff)
+              </label>
+              <input
+                id="stmt-file-input"
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setStmtFile(e.target.files[0]);
+                    setStmtError(null);
+                  }
+                }}
+                disabled={stmtUploading}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'var(--bg-app)',
+                  fontSize: '0.85rem',
+                }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={stmtUploading || !stmtFile}
+              style={{
+                padding: '0.55rem 1.25rem',
+                backgroundColor: stmtUploading || !stmtFile ? 'var(--border-strong)' : '#8b5cf6',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                fontWeight: 600,
+                cursor: stmtUploading || !stmtFile ? 'not-allowed' : 'pointer',
+                fontSize: '0.85rem',
+              }}
+            >
+              {stmtUploading ? 'Extracting Text & OCR...' : 'Analyze Statement (OCR)'}
+            </button>
+          </div>
+
+          {stmtError && (
+            <div className="state-box error-box" style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.85rem' }}>
+              <strong>Statement Ingestion Error:</strong> {stmtError}
+            </div>
+          )}
+        </form>
+
+        {/* OCR Result Preview */}
+        {stmtResult && (
+          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div>
+                <strong style={{ fontSize: '0.9rem' }}>OCR Extraction Result: {stmtResult.filename}</strong>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Batch ID: <code className="font-mono">{stmtResult.batch_id}</code> | OCR Engine: <strong>{stmtResult.ocr_engine_used}</strong>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <span className="badge badge-success">{stmtResult.valid_count} Valid</span>
+                <span className={`badge ${stmtResult.invalid_count > 0 ? 'badge-danger' : 'badge-info'}`}>{stmtResult.invalid_count} Invalid</span>
+              </div>
+            </div>
+
+            {/* Extracted Transactions Table */}
+            {stmtResult.extracted_transactions && stmtResult.extracted_transactions.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Page</th>
+                      <th>Ref / Tx ID</th>
+                      <th>Sender Account</th>
+                      <th>Recipient</th>
+                      <th>Amount</th>
+                      <th>Confidence</th>
+                      <th>Status & Errors</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stmtResult.extracted_transactions.map((tx, idx) => (
+                      <tr key={idx}>
+                        <td>Page {tx.page_number}</td>
+                        <td><code className="font-mono">{tx.transaction_id || 'N/A'}</code></td>
+                        <td>{tx.account_id || '—'}</td>
+                        <td>{tx.recipient_id || '—'}</td>
+                        <td>
+                          {tx.amount !== null && tx.amount !== undefined ? (
+                            <strong>{tx.amount.toFixed(2)} {tx.currency}</strong>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td>
+                          <span className={`badge ${getConfidenceBadge(tx.confidence_level)}`}>
+                            {tx.confidence_level} ({(tx.confidence_score * 100).toFixed(0)}%)
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.78rem' }}>
+                          {tx.is_valid ? (
+                            <span style={{ color: '#16a34a', fontWeight: 600 }}>✓ Normalized</span>
+                          ) : (
+                            <span style={{ color: '#dc2626' }}>
+                              ❌ {tx.validation_errors.join('; ')}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="state-box">No structured transaction rows identified in statement file.</div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Latest Ingestion Result */}

@@ -1,5 +1,6 @@
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from app.core.logging import logger
 from app.schemas.ingestion import (
@@ -94,5 +95,53 @@ class IngestionService:
     def get_batch(self, batch_id: str) -> IngestionResult | None:
         return get_batch_details(batch_id)
 
+    def ingest_statement(
+        self, content: bytes, filename: str
+    ) -> Any:
+        """Parses bank statement via OCR, validates extracted records, and persists to SQLite."""
+        from app.services.parsers.statement_ocr import StatementOCRParser
+
+        ocr_parser = StatementOCRParser()
+        extraction_result = ocr_parser.parse_statement(content, filename)
+        raw_records = ocr_parser.convert_to_raw_records(extraction_result)
+
+        validation_errors: list[ValidationErrorItem] = []
+        accepted_records: list[CanonicalTransaction] = []
+
+        for idx, raw_rec in enumerate(raw_records):
+            tx, record_errors = validate_and_normalize_record(
+                raw_rec, idx, SourceType.BANK_STATEMENT
+            )
+            if record_errors:
+                validation_errors.extend(record_errors)
+            elif tx:
+                accepted_records.append(tx)
+
+        rejected_indices = {err.record_index for err in validation_errors}
+        rejected_count = len(rejected_indices)
+        total_records = len(raw_records)
+        accepted_count = len(accepted_records)
+
+        summary = IngestionBatchSummary(
+            batch_id=extraction_result.batch_id,
+            source_type=SourceType.BANK_STATEMENT,
+            filename=filename,
+            total_records=total_records,
+            accepted_count=accepted_count,
+            rejected_count=rejected_count,
+            created_at=datetime.now(UTC),
+        )
+
+        ingest_res = IngestionResult(
+            batch=summary,
+            accepted_records=accepted_records,
+            validation_errors=validation_errors,
+        )
+
+        save_ingestion_result(ingest_res)
+        extraction_result.ingestion_result = ingest_res
+        return extraction_result
+
 
 ingestion_service = IngestionService()
+

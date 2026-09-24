@@ -1,11 +1,16 @@
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
+from app.api.deps import require_roles
+from app.schemas.auth import UserResponse
 from app.schemas.ingestion import IngestionBatchSummary, IngestionResult, SourceType
+from app.schemas.statement import StatementExtractionResult
+from app.services.audit_service import log_audit_event
 from app.services.ingestion import ingestion_service
 
 router = APIRouter()
+
 
 
 @router.post(
@@ -70,3 +75,48 @@ async def get_ingestion_batch(batch_id: str) -> IngestionResult:
             detail=f"Ingestion batch '{batch_id}' not found",
         )
     return batch
+
+
+@router.post(
+    "/ingest/statement",
+    response_model=StatementExtractionResult,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload PDF or Image bank statement for OCR extraction & pipeline validation",
+)
+async def upload_bank_statement(
+    file: Annotated[UploadFile, File(description="PDF or Image bank statement file")],
+    current_user: UserResponse = Depends(require_roles(["Analyst", "Admin"])),
+) -> StatementExtractionResult:
+    """
+    Extracts transaction records from PDF/Image statements using OCR/PyMuPDF,
+    validates and normalizes them through canonical pipeline, and persists to SQLite.
+    """
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded statement file must have a valid filename",
+        )
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded statement file is empty"
+        )
+
+    result = ingestion_service.ingest_statement(content=content, filename=file.filename)
+
+    log_audit_event(
+        user_email=current_user.email,
+        user_role=current_user.role.value,
+        action="INGEST_STATEMENT",
+        resource_type="STATEMENT_OCR",
+        status="SUCCESS",
+        metadata={
+            "filename": file.filename,
+            "extracted_count": result.extracted_count,
+            "valid_count": result.valid_count,
+            "ocr_engine_used": result.ocr_engine_used,
+        },
+    )
+    return result
+

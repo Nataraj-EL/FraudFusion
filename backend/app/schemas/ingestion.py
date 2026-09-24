@@ -11,6 +11,8 @@ class SourceType(str, Enum):
     ADAPTIVE_FRICTION = "ADAPTIVE_FRICTION"
     FUND_FLOW = "FUND_FLOW"
     PHISHING = "PHISHING"
+    BANK_STATEMENT = "BANK_STATEMENT"
+
 
 
 class ValidationErrorItem(BaseModel):

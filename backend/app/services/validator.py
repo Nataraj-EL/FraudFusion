@@ -286,6 +286,9 @@ def validate_and_normalize_record(
         source_metadata["ff_metrics"] = signal_metrics
     elif source_type == SourceType.PHISHING:
         source_metadata["ph_metrics"] = signal_metrics
+    elif source_type == SourceType.BANK_STATEMENT:
+        source_metadata["statement_metrics"] = signal_metrics
+
 
     canonical_tx = CanonicalTransaction(
         transaction_id=str(tx_id),

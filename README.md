@@ -215,11 +215,29 @@ npm run build
 - **Milestone 4 Unified Risk Scoring & Decision Engine**: Consolidated 0–100 risk score, dynamic risk bands and recommended actions, deterministic explainability summary, `POST /api/v1/risk-score` endpoint, and minimal Risk Assessment UI.
 - **Milestone 5 Explainable Reporting & Export**: Modular report service, deterministic STR draft generation for High/Critical bands, JSON/CSV/HTML/PDF exports, SQLite report persistence, `GET /api/v1/reports/{id}` & download endpoints, and interactive Report/Export UI modal.
 - **Milestone 6 RBAC & Audit Trail**: Role-based access control (Viewer, Analyst, Admin), lightweight local authentication with salted PBKDF2-HMAC-SHA256 password hashing, signed bearer session tokens, append-only SQLite `audit_logs` table, role-aware API authorization, login/audit views, and security dashboard.
-- **Milestone 7 Analyst Investigation Dashboard (Completed)**: Executive dashboard statistics, searchable & filterable transaction repository, single-transaction investigation modal, SVG fund-flow network topology visualizer, role-aware analyst workflow, and comprehensive automated test suite.
+- **Milestone 7 Analyst Investigation Dashboard**: Executive dashboard statistics, searchable & filterable transaction repository, single-transaction investigation modal, SVG fund-flow network topology visualizer, role-aware analyst workflow, and comprehensive automated test suite.
+- **Milestone 8 Optional Statement OCR Ingestion (Completed)**: Optional bank statement parser supporting PDF (PyMuPDF) and Image formats (Tesseract OCR), extraction confidence scoring, pipeline validation & normalization, `POST /api/v1/ingest/statement` endpoint, and statement analysis UI.
+
+---
+
+## 📄 Bank Statement OCR Ingestion (Optional)
+
+FraudFusion includes an optional, modular bank statement ingestion pipeline for extracting transaction data from PDF and image statements:
+
+### Features & Capabilities
+- **Supported Formats**: PDF statements (`.pdf`) and common image formats (`.png`, `.jpg`, `.jpeg`, `.tiff`, `.bmp`).
+- **OCR & Text Extraction**:
+  - Uses **PyMuPDF** (`fitz`) for fast, local text extraction from digital PDF statements.
+  - Gracefully falls back to **Tesseract OCR** (`pytesseract` + `Pillow`) for scanned image statements or scanned PDF pages.
+  - Optional OCR dependency: If Tesseract binary is unavailable, text-based PDF ingestion and standard JSON/CSV ingestion continue operating normally without errors.
+- **Extraction Confidence**: Every extracted transaction row includes a confidence score (0.0 to 1.0) and classification badge (`HIGH`, `MEDIUM`, `LOW`, `NEEDS_REVIEW`). Missing required fields produce structured validation errors rather than silent data invention.
+- **Unified Pipeline Integration**: Valid extracted transactions automatically flow into the existing Validation → Normalization → SQLite repository, instantly appearing across the Analyst Investigation Dashboard, Risk Engine, and Report Export services.
+- **API Endpoint**: `POST /api/v1/ingest/statement` (Enforces RBAC: Analyst & Admin access allowed; Viewer access forbidden).
 
 ---
 
 ## 🔍 Analyst Investigation Workflow
+
 
 FraudFusion provides a streamlined, minimal investigation experience for fraud analysts and compliance auditors:
 

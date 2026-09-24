@@ -51,18 +51,19 @@ def get_optional_user(
     )
 
 
-def require_roles(allowed_roles: list[UserRole]):
+def require_roles(allowed_roles: list[UserRole | str]):
     """FastAPI dependency factory enforcing RBAC role permissions."""
 
     def dependency(user: UserResponse = Depends(get_current_user)) -> UserResponse:
-        if user.role not in allowed_roles:
+        role_vals = [r.value if hasattr(r, "value") else str(r) for r in allowed_roles]
+        if user.role.value not in role_vals and user.role not in allowed_roles:
             log_audit_event(
                 user_email=user.email,
                 user_role=user.role.value,
                 action="UNAUTHORIZED_ACCESS_ATTEMPT",
                 resource_type="API",
                 status="UNAUTHORIZED",
-                metadata={"allowed_roles": [r.value for r in allowed_roles]},
+                metadata={"allowed_roles": role_vals},
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -71,3 +72,4 @@ def require_roles(allowed_roles: list[UserRole]):
         return user
 
     return dependency
+

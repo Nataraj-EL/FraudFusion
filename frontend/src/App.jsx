@@ -199,7 +199,8 @@ export function App() {
         {activeTab === 'dashboard' && <InvestigationDashboard user={user} token={token} />}
         {activeTab === 'risk' && <RiskAssessmentView user={user} token={token} />}
         {activeTab === 'signals' && <SignalInspector />}
-        {activeTab === 'ingestion' && isAnalyst && <IngestionPanel />}
+        {activeTab === 'ingestion' && isAnalyst && <IngestionPanel token={token} />}
+
         {activeTab === 'audit' && isAdmin && <AuditLogView token={token} />}
         {activeTab === 'config' && (
           <div className="grid-two-col">
