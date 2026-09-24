@@ -9,10 +9,10 @@ FraudFusion is a unified, explainable fraud-detection platform designed to aggre
 FraudFusion is designed around a modular, deterministic risk pipeline:
 
 ```
-[ Data Ingestion & Validation ] ──> [ Signal Extraction ] ──> [ Composite Scoring Engine ] ──> [ STR & UI Output ]
-  ├── Adaptive Friction (JSON)          ├── Adaptive Friction (AF: 45%)
-  ├── Fund Flow (CSV)                   ├── Fund Flow (FF: 35%)
-  └── Phishing Events (JSON)            └── Phishing Signals (PH: 20%)
+[ Data Ingestion & Validation ] ──> [ Signal Evaluation Engines ] ──> [ Composite Scoring Engine ] ──> [ STR & UI Output ]
+  ├── Adaptive Friction (JSON)          ├── Adaptive Friction (AF1, AF2, AF3)
+  ├── Fund Flow (CSV)                   ├── Fund Flow (FF1, FF2, FF3)
+  └── Phishing Events (JSON)            └── Phishing Signals (PH1, PH2, PH3)
 ```
 
 ### Module Directory Structure
@@ -22,28 +22,33 @@ FraudFusion/
 ├── backend/
 │   ├── app/
 │   │   ├── api/
-│   │   │   └── v1/            # Ingestion, Health & Configuration endpoints
+│   │   │   └── v1/            # Ingestion, Health, Config & Signals endpoints
 │   │   │       ├── config.py
 │   │   │       ├── health.py
-│   │   │       └── ingest.py  # File upload & batch query endpoints
+│   │   │       ├── ingest.py  # File upload & batch query endpoints
+│   │   │       └── signals.py # [NEW] Signal engine evaluation endpoint
 │   │   ├── core/              # Config (YAML), SQLite DB, logging, error handling
 │   │   ├── schemas/           # Pydantic schemas (Transactions, Ingestion, Signals)
 │   │   ├── services/
 │   │   │   ├── parsers/       # Modular parsers (AF JSON, FF CSV, PH JSON)
+│   │   │   ├── signals/       # [NEW] Independent signal evaluation engines
+│   │   │   │   ├── adaptive_friction.py (AF1, AF2, AF3)
+│   │   │   │   ├── fund_flow.py         (FF1, FF2, FF3)
+│   │   │   │   └── phishing.py          (PH1, PH2, PH3)
 │   │   │   ├── ingestion.py   # Ingestion orchestrator service
 │   │   │   ├── validator.py   # Strict record validation & logging
 │   │   │   ├── persistence.py # SQLite database repository
 │   │   │   └── base.py
 │   │   └── main.py            # Thin FastAPI entry point
 │   ├── config/
-│   │   └── risk_config.yaml   # Configurable signal group weights and 0–100 risk bands
-│   ├── tests/                 # Comprehensive Pytest suite (Parsers, Validation, Ingestion, API)
+│   │   └── risk_config.yaml   # Configurable signal group & individual factor weights
+│   ├── tests/                 # Comprehensive Pytest suite (38+ tests)
 │   ├── .env.example           # Environment template
 │   ├── pyproject.toml         # Pytest & Ruff configuration
 │   └── requirements.txt       # Pinned backend dependencies (Python 3.13)
 ├── frontend/
 │   ├── src/
-│   │   ├── components/        # Header, SystemStatus, RiskConfigCard, IngestionPanel
+│   │   ├── components/        # Header, SystemStatus, RiskConfigCard, IngestionPanel, SignalInspector
 │   │   ├── index.css          # Minimalist financial security UI design system
 │   │   └── App.jsx            # Tabbed application shell
 │   ├── package.json           # Pinned React + Vite dependencies
@@ -54,31 +59,38 @@ FraudFusion/
 
 ---
 
-## 📥 Unified Data Ingestion & Validation Layer
+## 🧮 Fraud Signal Engines & Mathematical Formulas
 
-FraudFusion ingests raw transaction and signal data from three primary source domains:
+FraudFusion evaluates three independent signal domains without hiding formulas inside generic utilities. All individual factor weights are externalized in `backend/config/risk_config.yaml`.
 
-1. **Adaptive Friction (JSON)**: Session anomaly scores, biometric friction metrics, step-up authentication failures.
-2. **Fund Flow (CSV)**: Account transfer logs, 24h velocity metrics, structuring indicators, mule scores.
-3. **Phishing Events (JSON)**: Domain similarity scores, link urgency levels, credential harvesting flags.
+### 1. Adaptive Friction (`AF`) Engine
+Group Weight: `0.45`
+- **AF1 (Device Fingerprint Delta)**: `1.0` if OS, browser, IP address, or user-agent differs from stored fingerprint, else `0.0`. (Weight: `0.50`)
+- **AF2 (Geo Distance)**: `min(distanceKm / 1500.0, 1.0)`. (Weight: `0.30`)
+- **AF3 (Amount vs Historical Mean)**: `max(0.0, min((amount - mean) / mean, 1.0))`. (Weight: `0.20`)
 
-### Key Ingestion Principles
-- **Strict Validation**: Required fields (`transaction_id`, `account_id`, `recipient_id`, `amount > 0.0`) are enforced using Pydantic. Invalid records are rejected cleanly without silent fixes.
-- **Structured Error Reporting**: Rejections return exact record index, reference ID, failing field, and specific reason.
-- **Canonical Normalization**: All valid inputs are normalized into `CanonicalTransaction` models while preserving raw signal factors in `source_metadata`.
-- **SQLite Audit Persistence**: Batches and validation errors are stored in SQLite (`data/fraud_fusion.db`).
+### 2. Fund Flow (`FF`) Engine
+Group Weight: `0.35`
+- **FF1 (Balanced Flow Ratio)**: `smaller(InDegree, OutDegree) / larger(InDegree, OutDegree)`. Returns `0.0` if larger is 0. (Weight: `0.45`)
+- **FF2 (Near-zero Retained Balance)**: `1.0 - (RemainingBalance / TotalSent)`. Returns `0.0` if total_sent is 0. Clipped to `[0.0, 1.0]`. (Weight: `0.30`)
+- **FF3 (Short Holding Time)**: `max(0.0, min(1.0, 1.0 - (HoldingMinutes / 60.0)))`. (Weight: `0.25`)
+
+### 3. Phishing (`PH`) Engine
+Group Weight: `0.20`
+- **PH1 (Domain Age)**: `max(0.0, min(1.0, 1.0 - (age_days / 180.0)))`. (Weight: `0.40`)
+- **PH2 (Certificate Quality)**: `1.0` if `selfSigned` is True OR `validity_days < 30`, else `0.0`. (Weight: `0.30`)
+- **PH3 (Blacklist Hit)**: `1.0` if `localListing == "blacklist"`, else `0.0`. (Weight: `0.30`)
 
 ---
 
 ## ⚙️ Risk Engine Configuration
 
-Signal weights and score boundaries are strictly externalized in `backend/config/risk_config.yaml`:
+Signal group weights and factor weights are configured in `backend/config/risk_config.yaml`:
 
-- **Signal Group Weights**:
-  - **Adaptive Friction (`AF`)**: `0.45` (45%)
-  - **Fund Flow (`FF`)**: `0.35` (35%)
-  - **Phishing (`PH`)**: `0.20` (20%)
-- **Factor Clipping**: All individual signal factors are clipped to `[0.0, 1.0]`.
+- **Signal Groups**:
+  - `AF`: 45% composite weight
+  - `FF`: 35% composite weight
+  - `PH`: 20% composite weight
 - **Risk Bands**:
   - `0–20`: **Very Low** (`ALLOW`)
   - `21–40`: **Low** (`MONITOR`)
@@ -112,13 +124,28 @@ uvicorn app.main:app --reload --port 8000
 - API Documentation (Swagger): `http://127.0.0.1:8000/docs`
 - Health Endpoint: `http://127.0.0.1:8000/api/v1/health`
 - Config Endpoint: `http://127.0.0.1:8000/api/v1/config`
-- Ingest Upload API: `POST http://127.0.0.1:8000/api/v1/ingest/upload`
+- Signal Evaluation API: `POST http://127.0.0.1:8000/api/v1/signals/evaluate`
 
-#### API Ingestion Usage Example (`curl`)
+#### API Signal Evaluation Usage Example (`curl`)
 ```bash
-curl -X POST "http://127.0.0.1:8000/api/v1/ingest/upload" \
-  -F "file=@sample_fund_flow.csv" \
-  -F "source_type=FUND_FLOW"
+curl -X POST "http://127.0.0.1:8000/api/v1/signals/evaluate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transaction": {
+      "transaction_id": "TX-1001",
+      "account_id": "ACC-101",
+      "recipient_id": "ACC-202",
+      "amount": 2500.0,
+      "currency": "USD"
+    },
+    "custom_metrics": {
+      "distance_km": 1200.0,
+      "historical_mean_amount": 1000.0,
+      "in_degree": 10,
+      "out_degree": 10,
+      "domain_age_days": 18.0
+    }
+  }'
 ```
 
 ---
@@ -163,5 +190,6 @@ npm run build
 ## 📌 Milestone Status & Scope
 
 - **Milestone 1 Foundation**: Project structure, PyYAML config, Pydantic schemas, logging, health check, unit test harness, minimalist UI shell.
-- **Milestone 2 Ingestion & Validation (Completed)**: Modular input parsers (AF JSON, FF CSV, PH JSON), strict Pydantic validation, structured error reporting, canonical transaction normalization, SQLite audit persistence, `/api/v1/ingest` endpoints, and UI upload experience.
-- **Future Milestones**: Unified scoring engine, signal group evaluation (AF, FF, PH formulas), STR generator, interactive evaluation dashboard.
+- **Milestone 2 Ingestion & Validation**: Modular input parsers (AF JSON, FF CSV, PH JSON), strict validation, structured errors, SQLite audit persistence, `/api/v1/ingest` endpoints.
+- **Milestone 3 Explainable Signal Engines (Completed)**: Independent AF (AF1-3), FF (FF1-3), and PH (PH1-3) signal evaluation engines with field-specific explanations, externalized YAML factor weights, `POST /api/v1/signals/evaluate` endpoint, and Signal Inspector UI.
+- **Future Milestones**: Consolidated composite scoring engine (0-100 score, risk bands, actions), STR generator, interactive evaluation dashboard.

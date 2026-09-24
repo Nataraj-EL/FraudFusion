@@ -3,9 +3,10 @@ import { Header } from './components/Header';
 import { SystemStatus } from './components/SystemStatus';
 import { RiskConfigCard } from './components/RiskConfigCard';
 import { IngestionPanel } from './components/IngestionPanel';
+import { SignalInspector } from './components/SignalInspector';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState('ingestion');
+  const [activeTab, setActiveTab] = useState('signals');
 
   return (
     <div className="app-container">
@@ -17,11 +18,26 @@ export function App() {
               Fraud Fusion Workspace
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              Unified Data Ingestion & Validation Engine
+              Explainable Fraud Detection & Signal Evaluation Engine
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setActiveTab('signals')}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: activeTab === 'signals' ? 'var(--primary-color)' : 'var(--bg-surface)',
+                color: activeTab === 'signals' ? '#ffffff' : 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+              }}
+            >
+              Signal Inspector
+            </button>
             <button
               onClick={() => setActiveTab('ingestion')}
               style={{
@@ -55,8 +71,8 @@ export function App() {
           </div>
         </div>
 
+        {activeTab === 'signals' && <SignalInspector />}
         {activeTab === 'ingestion' && <IngestionPanel />}
-
         {activeTab === 'config' && (
           <div className="grid-two-col">
             <SystemStatus />

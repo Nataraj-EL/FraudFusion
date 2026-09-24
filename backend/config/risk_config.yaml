@@ -10,16 +10,57 @@ signal_groups:
     name: "Adaptive Friction"
     weight: 0.45
     description: "Evaluates step-up authentication, session anomaly, and friction metrics"
+    factors:
+      AF1:
+        name: "Device Fingerprint Delta"
+        weight: 0.50
+        description: "1 if OS, browser, IP, or user-agent differs from stored fingerprint, else 0"
+      AF2:
+        name: "Geo Distance"
+        weight: 0.30
+        description: "min(distanceKm / 1500, 1)"
+      AF3:
+        name: "Amount vs Historical Mean"
+        weight: 0.20
+        description: "max(0, min((amount - mean) / mean, 1))"
+
   fund_flow:
     code: "FF"
     name: "Fund Flow"
     weight: 0.35
     description: "Evaluates velocity, structuring, mule indicators, and transfer patterns"
+    factors:
+      FF1:
+        name: "Balanced Flow Ratio"
+        weight: 0.45
+        description: "smaller(InDegree, OutDegree) / larger(InDegree, OutDegree)"
+      FF2:
+        name: "Near-zero Retained Balance"
+        weight: 0.30
+        description: "1 - (RemainingBalance / TotalSent)"
+      FF3:
+        name: "Short Holding Time"
+        weight: 0.25
+        description: "1 - (HoldingMinutes / 60), clipped 0-1"
+
   phishing:
     code: "PH"
     name: "Phishing"
     weight: 0.20
     description: "Evaluates domain spoofing, link urgency, payload similarity, and credential harvesting"
+    factors:
+      PH1:
+        name: "Domain Age"
+        weight: 0.40
+        description: "1 - min(age_days / 180, 1)"
+      PH2:
+        name: "Certificate Quality"
+        weight: 0.30
+        description: "1 if self-signed or validity < 30 days, else 0"
+      PH3:
+        name: "Blacklist Hit"
+        weight: 0.30
+        description: "1 if localListing == 'blacklist', else 0"
 
 # Factor values are constrained to [0.0, 1.0]
 factor_clipping:

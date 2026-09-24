@@ -9,11 +9,19 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.core.errors import ConfigValidationError, InvalidRiskBandError, InvalidWeightError
 
 
+class IndividualFactorConfig(BaseModel):
+    name: str
+    weight: float = Field(..., ge=0.0, le=1.0)
+    description: str
+
+
 class SignalGroupConfig(BaseModel):
     code: str
     name: str
     weight: float = Field(..., ge=0.0, le=1.0)
     description: str
+    factors: dict[str, IndividualFactorConfig] = Field(default_factory=dict)
+
 
 
 class FactorClippingConfig(BaseModel):
