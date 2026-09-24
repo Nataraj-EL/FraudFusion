@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { ReportExportModal } from './ReportExportModal';
 
 export function RiskAssessmentView() {
   const [assessment, setAssessment] = useState(null);
+  const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sampleType, setSampleType] = useState('HIGH_RISK');
   const [expandedSignals, setExpandedSignals] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const getSamplePayload = (type) => {
     if (type === 'HIGH_RISK') {
@@ -109,6 +112,8 @@ export function RiskAssessmentView() {
     setError(null);
     try {
       const payload = getSamplePayload(type);
+
+      // Compute risk score
       const res = await fetch('/api/v1/risk-score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,6 +126,17 @@ export function RiskAssessmentView() {
 
       const data = await res.json();
       setAssessment(data);
+
+      // Generate Report and STR
+      const rptRes = await fetch('/api/v1/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (rptRes.ok) {
+        const rptData = await rptRes.json();
+        setReport(rptData);
+      }
     } catch (err) {
       setError(err.message || 'Failed to compute risk score');
     } finally {
@@ -136,6 +152,12 @@ export function RiskAssessmentView() {
     const selected = e.target.value;
     setSampleType(selected);
     computeRiskScore(selected);
+  };
+
+  const handleDownload = (format) => {
+    if (!assessment) return;
+    const url = `/api/v1/reports/${assessment.transaction_id}/download?format=${format}`;
+    window.open(url, '_blank');
   };
 
   const getBandColor = (band) => {
@@ -167,9 +189,9 @@ export function RiskAssessmentView() {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div className="card-title">Unified Risk Assessment Engine</div>
+            <div className="card-title">Unified Risk Assessment & Reporting Engine</div>
             <div className="card-subtitle">
-              Consolidated 0–100 risk score, dynamic band, recommended action, and deterministic explainability
+              Consolidated 0–100 risk score, dynamic band, recommended action, deterministic explainability, and automated STR generation
             </div>
           </div>
 
@@ -199,7 +221,7 @@ export function RiskAssessmentView() {
         </div>
       </div>
 
-      {loading && <div className="state-box">Evaluating unified risk engine...</div>}
+      {loading && <div className="state-box">Evaluating unified risk engine & generating report...</div>}
       {error && <div className="state-box error-box">{error}</div>}
 
       {assessment && !loading && (
@@ -250,11 +272,44 @@ export function RiskAssessmentView() {
                   <span className={`badge ${getActionBadgeClass(assessment.recommended_action)}`} style={{ fontSize: '0.9rem', padding: '0.35rem 0.75rem' }}>
                     {assessment.recommended_action}
                   </span>
-                  {assessment.str_report_eligible && (
-                    <span className="badge badge-danger" style={{ fontSize: '0.75rem' }}>
-                      STR Eligible
+                  {report && (
+                    <span className={`badge ${report.str_status === 'DRAFT_GENERATED' ? 'badge-danger' : 'badge-success'}`} style={{ fontSize: '0.75rem' }}>
+                      STR Status: {report.str_status === 'DRAFT_GENERATED' ? 'Draft Generated' : 'Not Required'}
                     </span>
                   )}
+                </div>
+              </div>
+
+              {/* Analyst Action & Export Bar */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  style={{
+                    padding: '0.55rem 1rem',
+                    backgroundColor: 'var(--primary-color)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-sm)',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  🔍 View Full Report & STR
+                </button>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <button onClick={() => handleDownload('json')} style={{ flex: 1, padding: '0.35rem', fontSize: '0.75rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>
+                    JSON
+                  </button>
+                  <button onClick={() => handleDownload('csv')} style={{ flex: 1, padding: '0.35rem', fontSize: '0.75rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>
+                    CSV
+                  </button>
+                  <button onClick={() => handleDownload('html')} style={{ flex: 1, padding: '0.35rem', fontSize: '0.75rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>
+                    HTML
+                  </button>
+                  <button onClick={() => handleDownload('pdf')} style={{ flex: 1, padding: '0.35rem', fontSize: '0.75rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>
+                    PDF
+                  </button>
                 </div>
               </div>
 
@@ -408,6 +463,11 @@ export function RiskAssessmentView() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && report && (
+        <ReportExportModal report={report} onClose={() => setShowReportModal(false)} />
       )}
     </div>
   );

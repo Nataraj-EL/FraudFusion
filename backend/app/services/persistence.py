@@ -1,6 +1,7 @@
 import json
 import sqlite3
 from datetime import UTC, datetime
+from typing import Any
 
 from app.core.database import get_db_connection
 from app.schemas.ingestion import (
@@ -228,3 +229,111 @@ def get_batch_details(
     finally:
         if own_conn:
             conn.close()
+
+
+def save_risk_report(report: Any, conn: sqlite3.Connection | None = None) -> None:
+    """Persists completed RiskReport JSON into SQLite."""
+    own_conn = False
+    if conn is None:
+        conn = get_db_connection()
+        own_conn = True
+
+    try:
+        with conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO risk_reports (
+                    transaction_id, report_id, consolidated_score, risk_band,
+                    recommended_action, af_subscore, ff_subscore, ph_subscore,
+                    str_status, report_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    report.transaction_id,
+                    report.report_id,
+                    report.consolidated_score,
+                    report.risk_band,
+                    report.recommended_action,
+                    report.af_subscore,
+                    report.ff_subscore,
+                    report.ph_subscore,
+                    report.str_status,
+                    report.model_dump_json(),
+                    datetime.now(UTC).isoformat(),
+                ),
+            )
+    finally:
+        if own_conn:
+            conn.close()
+
+
+def get_risk_report_from_db(
+    transaction_id: str, conn: sqlite3.Connection | None = None
+) -> Any | None:
+    """Retrieves stored RiskReport by transaction_id from SQLite if available."""
+    own_conn = False
+    if conn is None:
+        conn = get_db_connection()
+        own_conn = True
+
+    try:
+        cursor = conn.execute(
+            """
+            SELECT report_json FROM risk_reports WHERE transaction_id = ?
+            """,
+            (transaction_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        from app.schemas.report import RiskReport
+
+        return RiskReport.model_validate_json(row["report_json"])
+    finally:
+        if own_conn:
+            conn.close()
+
+
+def get_normalized_transaction(
+    transaction_id: str, conn: sqlite3.Connection | None = None
+) -> CanonicalTransaction | None:
+    """Retrieves normalized canonical transaction by transaction_id."""
+    own_conn = False
+    if conn is None:
+        conn = get_db_connection()
+        own_conn = True
+
+    try:
+        cursor = conn.execute(
+            """
+            SELECT transaction_id, source_type, source_reference_id, account_id,
+                   recipient_id, amount, currency, channel, payment_method, status,
+                   timestamp, device_context_json, source_metadata_json
+            FROM normalized_transactions
+            WHERE transaction_id = ?
+            """,
+            (transaction_id,),
+        )
+        r = cursor.fetchone()
+        if not r:
+            return None
+
+        return CanonicalTransaction(
+            transaction_id=r["transaction_id"],
+            source_type=SourceType(r["source_type"]),
+            source_reference_id=r["source_reference_id"],
+            account_id=r["account_id"],
+            recipient_id=r["recipient_id"],
+            amount=r["amount"],
+            currency=r["currency"],
+            channel=ChannelType(r["channel"]),
+            payment_method=PaymentMethod(r["payment_method"]),
+            status=TransactionStatus(r["status"]),
+            timestamp=datetime.fromisoformat(r["timestamp"]),
+            device_context=DeviceContext(**json.loads(r["device_context_json"])),
+            source_metadata=json.loads(r["source_metadata_json"]),
+        )
+    finally:
+        if own_conn:
+            conn.close()
+

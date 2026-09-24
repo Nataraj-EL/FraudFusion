@@ -4,25 +4,8 @@ from pathlib import Path
 from app.core.config import settings
 
 
-def get_db_connection(db_path: str | None = None) -> sqlite3.Connection:
-    """Returns a connected sqlite3.Connection with Row factory enabled."""
-    target_path = db_path or settings.database_path
-    if target_path != ":memory:":
-        path = Path(target_path)
-        if not path.is_absolute():
-            base_dir = Path(__file__).resolve().parent.parent.parent
-            path = base_dir / target_path
-        path.parent.mkdir(parents=True, exist_ok=True)
-        target_path = str(path)
-
-    conn = sqlite3.connect(target_path, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db(db_path: str | None = None) -> None:
-    """Initializes database tables if they do not exist."""
-    conn = get_db_connection(db_path)
+def _ensure_tables_exist(conn: sqlite3.Connection) -> None:
+    """Ensures all database schema tables exist on the connection."""
     with conn:
         conn.executescript(
             """
@@ -67,8 +50,45 @@ def init_db(db_path: str | None = None) -> None:
                 FOREIGN KEY (batch_id) REFERENCES ingestion_batches(batch_id) ON DELETE CASCADE
             );
 
+            CREATE TABLE IF NOT EXISTS risk_reports (
+                transaction_id TEXT PRIMARY KEY,
+                report_id TEXT NOT NULL,
+                consolidated_score REAL NOT NULL,
+                risk_band TEXT NOT NULL,
+                recommended_action TEXT NOT NULL,
+                af_subscore REAL NOT NULL,
+                ff_subscore REAL NOT NULL,
+                ph_subscore REAL NOT NULL,
+                str_status TEXT NOT NULL,
+                report_json TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_transactions_batch ON normalized_transactions(batch_id);
             CREATE INDEX IF NOT EXISTS idx_errors_batch ON validation_errors(batch_id);
             """
         )
+
+
+def get_db_connection(db_path: str | None = None) -> sqlite3.Connection:
+    """Returns a connected sqlite3.Connection with Row factory enabled."""
+    target_path = db_path or settings.database_path
+    if target_path != ":memory:":
+        path = Path(target_path)
+        if not path.is_absolute():
+            base_dir = Path(__file__).resolve().parent.parent.parent
+            path = base_dir / target_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        target_path = str(path)
+
+    conn = sqlite3.connect(target_path, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    _ensure_tables_exist(conn)
+    return conn
+
+
+def init_db(db_path: str | None = None) -> None:
+    """Initializes database tables if they do not exist."""
+    conn = get_db_connection(db_path)
     conn.close()
+
