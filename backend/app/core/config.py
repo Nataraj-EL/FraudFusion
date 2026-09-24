@@ -115,6 +115,8 @@ class Settings(BaseSettings):
     port: int = 8000
     risk_config_path: str = "config/risk_config.yaml"
     database_path: str = "data/fraud_fusion.db"
+    jwt_secret_key: str = "fraudfusion_dev_secret_key_change_in_production_123"
+    jwt_algorithm: str = "HS256"
     cors_origins: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -124,6 +126,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
+
 
 
 

@@ -213,4 +213,55 @@ npm run build
 - **Milestone 2 Ingestion & Validation**: Modular input parsers (AF JSON, FF CSV, PH JSON), strict validation, structured errors, SQLite audit persistence, `/api/v1/ingest` endpoints.
 - **Milestone 3 Explainable Signal Engines**: Independent AF (AF1-3), FF (FF1-3), and PH (PH1-3) signal evaluation engines with field-specific explanations, externalized YAML factor weights, `POST /api/v1/signals/evaluate` endpoint, and Signal Inspector UI.
 - **Milestone 4 Unified Risk Scoring & Decision Engine**: Consolidated 0–100 risk score, dynamic risk bands and recommended actions, deterministic explainability summary, `POST /api/v1/risk-score` endpoint, and minimal Risk Assessment UI.
-- **Milestone 5 Explainable Reporting & Export (Completed)**: Modular report service, deterministic STR draft generation for High/Critical bands, JSON/CSV/HTML/PDF exports, SQLite report persistence, `GET /api/v1/reports/{id}` & download endpoints, and interactive Report/Export UI modal.
+- **Milestone 5 Explainable Reporting & Export**: Modular report service, deterministic STR draft generation for High/Critical bands, JSON/CSV/HTML/PDF exports, SQLite report persistence, `GET /api/v1/reports/{id}` & download endpoints, and interactive Report/Export UI modal.
+- **Milestone 6 RBAC & Audit Trail (Completed)**: Role-based access control (Viewer, Analyst, Admin), lightweight local authentication with salted PBKDF2-HMAC-SHA256 password hashing, signed bearer session tokens, append-only SQLite `audit_logs` table, role-aware API authorization, login/audit views, and security dashboard.
+
+---
+
+## 🔐 Role-Based Access Control (RBAC) & Authentication
+
+FraudFusion implements a lightweight, local authentication & authorization layer designed for security compliance without external infrastructure overhead.
+
+### Default Development Users
+
+On application startup, the platform automatically seeds three pre-configured development users if they do not already exist:
+
+| Role | Email | Default Password | Granted Permissions |
+|---|---|---|---|
+| **Viewer** | `viewer@fraudfusion.io` | `ViewerPass123!` | Read-only access: view transactions, scores, and reports. |
+| **Analyst** | `analyst@fraudfusion.io` | `AnalystPass123!` | All Viewer capabilities + evaluate risk, generate reports, generate STR drafts, and export reports. |
+| **Admin** | `admin@fraudfusion.io` | `AdminPass123!` | All Analyst capabilities + manage users/roles + query tamper-evident audit logs. |
+
+### Authentication Architecture
+- **Password Hashing**: Salted `PBKDF2-HMAC-SHA256` with 100,000 iterations using Python's standard `hashlib`.
+- **Session Tokens**: Cryptographically signed bearer tokens generated via `HMAC-SHA256` using externalized `JWT_SECRET_KEY` and `JWT_ALGORITHM`.
+- **API Authorization**: Thin FastAPI dependencies (`require_roles(["admin"])`) enforce role constraints on all sensitive routes.
+
+---
+
+## 📜 Append-Only Audit Trail
+
+FraudFusion captures all critical compliance and operational actions in a tamper-evident, append-only SQLite table (`audit_logs`).
+
+### Audited Actions
+- `USER_LOGIN`: User authentication attempts (success/failure)
+- `INGEST_TRANSACTIONS`: Data file ingestion and batch parsing
+- `EVALUATE_RISK`: Execution of the Unified Risk Scoring Engine
+- `GENERATE_REPORT`: Creation of compliance risk reports
+- `GENERATE_STR`: Automated drafting of Suspicious Transaction Reports (STRs)
+- `VIEW_REPORT`: Inspection of transaction reports
+- `EXPORT_REPORT`: Exporting risk assessments (JSON, CSV, HTML, PDF)
+- `VIEW_AUDIT_LOGS`: Admin retrieval of audit trail records
+- `CREATE_USER` / `LIST_USERS`: Admin user management operations
+
+### Audit Record Schema
+Each audit record captures:
+- `timestamp`: ISO-8601 formatted UTC timestamp
+- `user`: Account email of the executing user
+- `role`: Role of the user at the time of execution (`viewer`, `analyst`, `admin`)
+- `action`: Specific domain action executed
+- `resource_type`: Type of resource accessed (`TRANSACTION`, `RISK_ENGINE`, `REPORT`, `AUDIT_LOG`, `USER`)
+- `transaction_id`: Associated transaction ID (when applicable)
+- `status`: Outcome (`SUCCESS`, `FAILURE`, `UNAUTHORIZED`)
+- `metadata`: Supplemental details (e.g. risk score, export format, user created)
+

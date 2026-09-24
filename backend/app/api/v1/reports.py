@@ -1,10 +1,13 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
 
+from app.api.deps import get_optional_user
+from app.schemas.auth import UserResponse
 from app.schemas.report import RiskReport
 from app.schemas.transaction import Transaction
+from app.services.audit_service import log_audit_event
 from app.services.persistence import (
     get_normalized_transaction,
     get_risk_report_from_db,
@@ -53,7 +56,10 @@ def _get_or_generate_report(transaction_id: str) -> RiskReport:
     status_code=status.HTTP_200_OK,
     summary="Evaluate transaction and generate full RiskReport & STR draft",
 )
-async def generate_report_endpoint(payload: GenerateReportRequest) -> RiskReport:
+async def generate_report_endpoint(
+    payload: GenerateReportRequest,
+    current_user: UserResponse = Depends(get_optional_user),
+) -> RiskReport:
     """
     Evaluates transaction risk score, generates human-readable report,
     creates STR draft if High or Critical risk, and persists to SQLite.
@@ -63,6 +69,28 @@ async def generate_report_endpoint(payload: GenerateReportRequest) -> RiskReport
     )
     report = generate_risk_report(assessment, payload.transaction)
     save_risk_report(report)
+
+    log_audit_event(
+        user_email=current_user.email,
+        user_role=current_user.role.value,
+        action="GENERATE_REPORT",
+        resource_type="REPORT",
+        transaction_id=report.transaction_id,
+        status="SUCCESS",
+        metadata={"str_status": report.str_status, "risk_band": report.risk_band},
+    )
+
+    if report.str_draft:
+        log_audit_event(
+            user_email=current_user.email,
+            user_role=current_user.role.value,
+            action="GENERATE_STR",
+            resource_type="STR_DRAFT",
+            transaction_id=report.transaction_id,
+            status="SUCCESS",
+            metadata={"str_id": report.str_draft.str_id},
+        )
+
     return report
 
 
@@ -72,9 +100,21 @@ async def generate_report_endpoint(payload: GenerateReportRequest) -> RiskReport
     status_code=status.HTTP_200_OK,
     summary="Get RiskReport JSON for a transaction",
 )
-async def get_report_endpoint(transaction_id: str) -> RiskReport:
+async def get_report_endpoint(
+    transaction_id: str,
+    current_user: UserResponse = Depends(get_optional_user),
+) -> RiskReport:
     """Retrieves full RiskReport by transaction_id."""
-    return _get_or_generate_report(transaction_id)
+    report = _get_or_generate_report(transaction_id)
+    log_audit_event(
+        user_email=current_user.email,
+        user_role=current_user.role.value,
+        action="VIEW_REPORT",
+        resource_type="REPORT",
+        transaction_id=transaction_id,
+        status="SUCCESS",
+    )
+    return report
 
 
 @router.get(
@@ -85,10 +125,21 @@ async def get_report_endpoint(transaction_id: str) -> RiskReport:
 async def download_report_endpoint(
     transaction_id: str,
     format: str = Query("html", pattern="^(json|csv|html|pdf)$"),
+    current_user: UserResponse = Depends(get_optional_user),
 ) -> Response:
     """Downloads report formatted as JSON, CSV, or standalone HTML/PDF document."""
     report = _get_or_generate_report(transaction_id)
     fmt = format.lower()
+
+    log_audit_event(
+        user_email=current_user.email,
+        user_role=current_user.role.value,
+        action="EXPORT_REPORT",
+        resource_type="REPORT",
+        transaction_id=transaction_id,
+        status="SUCCESS",
+        metadata={"format": fmt},
+    )
 
     if fmt == "json":
         return Response(
@@ -111,8 +162,6 @@ async def download_report_endpoint(
         )
 
 
-
-
 @router.get(
     "/export/{transaction_id}",
     status_code=status.HTTP_200_OK,
@@ -121,6 +170,9 @@ async def download_report_endpoint(
 async def export_report_endpoint(
     transaction_id: str,
     format: str = Query("json", pattern="^(json|csv|html|pdf)$"),
+    current_user: UserResponse = Depends(get_optional_user),
 ) -> Response:
     """Exports risk report formatted as JSON, CSV, or HTML string."""
-    return await download_report_endpoint(transaction_id=transaction_id, format=format)
+    return await download_report_endpoint(
+        transaction_id=transaction_id, format=format, current_user=current_user
+    )

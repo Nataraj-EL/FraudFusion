@@ -1,13 +1,17 @@
 from typing import Any
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, Field, model_validator
 
+from app.api.deps import get_optional_user
+from app.schemas.auth import UserResponse
 from app.schemas.signals import RiskAssessment
 from app.schemas.transaction import Transaction
+from app.services.audit_service import log_audit_event
 from app.services.risk_engine import evaluate_risk_score
 
 router = APIRouter()
+
 
 
 class RiskScoreRequest(BaseModel):
@@ -39,12 +43,30 @@ class RiskScoreRequest(BaseModel):
     status_code=status.HTTP_200_OK,
     summary="Compute consolidated risk score, risk band, recommended action, and explanation",
 )
-async def compute_risk_score(payload: RiskScoreRequest) -> RiskAssessment:
+async def compute_risk_score(
+    payload: RiskScoreRequest,
+    current_user: UserResponse = Depends(get_optional_user),
+) -> RiskAssessment:
     """
     Evaluates AF, FF, and PH signal engines, computes 0-100 subscores,
     aggregates consolidated risk score, determines risk band & recommended action,
     and returns concise deterministic explanation.
     """
-    return evaluate_risk_score(
+    assessment = evaluate_risk_score(
         transaction=payload.transaction, custom_metrics=payload.custom_metrics
     )
+    log_audit_event(
+        user_email=current_user.email,
+        user_role=current_user.role.value,
+        action="EVALUATE_RISK",
+        resource_type="RISK_SCORE",
+        transaction_id=assessment.transaction_id,
+        status="SUCCESS",
+        metadata={
+            "consolidated_score": assessment.consolidated_score,
+            "risk_band": assessment.risk_band,
+            "recommended_action": assessment.recommended_action,
+        },
+    )
+    return assessment
+
