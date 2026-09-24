@@ -41,12 +41,13 @@ def evaluate_phishing(
     # ---------------------------------------------------------
     # PH1: Domain Age
     # ---------------------------------------------------------
-    domain_age_days = float(
-        ph_metrics.get("domain_age_days")
-        or ph_metrics.get("age_days")
-        or ph_metrics.get("domain_age")
-        or 180.0
-    )
+    dad_val = None
+    for k in ("domain_age_days", "age_days", "domain_age"):
+        if k in ph_metrics and ph_metrics[k] is not None:
+            dad_val = ph_metrics[k]
+            break
+    domain_age_days = float(dad_val) if dad_val is not None else 180.0
+
     domain_age_days = max(0.0, domain_age_days)
     rf1 = max(0.0, min(1.0, 1.0 - (domain_age_days / 180.0)))
 

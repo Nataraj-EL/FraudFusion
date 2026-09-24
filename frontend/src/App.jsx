@@ -4,9 +4,10 @@ import { SystemStatus } from './components/SystemStatus';
 import { RiskConfigCard } from './components/RiskConfigCard';
 import { IngestionPanel } from './components/IngestionPanel';
 import { SignalInspector } from './components/SignalInspector';
+import { RiskAssessmentView } from './components/RiskAssessmentView';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState('signals');
+  const [activeTab, setActiveTab] = useState('risk');
 
   return (
     <div className="app-container">
@@ -18,11 +19,26 @@ export function App() {
               Fraud Fusion Workspace
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              Explainable Fraud Detection & Signal Evaluation Engine
+              Unified Explainable Fraud Detection & Risk Scoring Platform
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setActiveTab('risk')}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: activeTab === 'risk' ? 'var(--primary-color)' : 'var(--bg-surface)',
+                color: activeTab === 'risk' ? '#ffffff' : 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+              }}
+            >
+              Risk Assessment
+            </button>
             <button
               onClick={() => setActiveTab('signals')}
               style={{
@@ -71,6 +87,7 @@ export function App() {
           </div>
         </div>
 
+        {activeTab === 'risk' && <RiskAssessmentView />}
         {activeTab === 'signals' && <SignalInspector />}
         {activeTab === 'ingestion' && <IngestionPanel />}
         {activeTab === 'config' && (
@@ -81,7 +98,7 @@ export function App() {
         )}
       </main>
       <footer className="app-footer">
-        FraudFusion &copy; {new Date().getFullYear()} — Modular, Deterministic, Explainable Risk Architecture
+        FraudFusion &copy; {new Date().getFullYear()} — Unified, Explainable Fraud Detection Architecture
       </footer>
     </div>
   );

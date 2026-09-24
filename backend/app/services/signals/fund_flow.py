@@ -137,12 +137,13 @@ def evaluate_fund_flow(
     # ---------------------------------------------------------
     # FF3: Short Holding Time
     # ---------------------------------------------------------
-    holding_mins = float(
-        ff_metrics.get("holding_minutes")
-        or ff_metrics.get("holding_time_minutes")
-        or ff_metrics.get("dwell_time_minutes")
-        or 60.0
-    )
+    hm_val = None
+    for k in ("holding_minutes", "holding_time_minutes", "dwell_time_minutes"):
+        if k in ff_metrics and ff_metrics[k] is not None:
+            hm_val = ff_metrics[k]
+            break
+    holding_mins = float(hm_val) if hm_val is not None else 60.0
+
     holding_mins = max(0.0, holding_mins)
     rf3 = max(0.0, min(1.0, 1.0 - (holding_mins / 60.0)))
 
