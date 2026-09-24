@@ -29,8 +29,14 @@ htmlcov/
 .env.local
 *.secret
 
+# Database & local data
+data/
+*.db
+*.sqlite3
+
 # IDE & OS
 .vscode/
 .idea/
 .DS_Store
 *.swp
+

@@ -106,6 +106,7 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8000
     risk_config_path: str = "config/risk_config.yaml"
+    database_path: str = "data/fraud_fusion.db"
     cors_origins: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -115,6 +116,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
+
 
 
 def load_risk_config(config_path: str | Path) -> RiskConfig:

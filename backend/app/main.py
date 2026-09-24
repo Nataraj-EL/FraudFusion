@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import __version__
 from app.api.v1 import router as api_v1_router
 from app.core.config import settings
+from app.core.database import init_db
 from app.core.errors import (
     FraudFusionError,
     fraud_fusion_exception_handler,
@@ -20,8 +21,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     logger.info(
         f"Starting FraudFusion API v{__version__} in [{settings.environment}] environment"
     )
+    init_db()
     yield
     logger.info("Shutting down FraudFusion API")
+
 
 
 app = FastAPI(

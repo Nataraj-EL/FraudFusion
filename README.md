@@ -9,10 +9,10 @@ FraudFusion is a unified, explainable fraud-detection platform designed to aggre
 FraudFusion is designed around a modular, deterministic risk pipeline:
 
 ```
-[ Synthetic Ingestion ] ──> [ Signal Extraction ] ──> [ Composite Scoring Engine ] ──> [ STR & UI Output ]
-                                ├── Adaptive Friction (AF: 45%)
-                                ├── Fund Flow (FF: 35%)
-                                └── Phishing Signals (PH: 20%)
+[ Data Ingestion & Validation ] ──> [ Signal Extraction ] ──> [ Composite Scoring Engine ] ──> [ STR & UI Output ]
+  ├── Adaptive Friction (JSON)          ├── Adaptive Friction (AF: 45%)
+  ├── Fund Flow (CSV)                   ├── Fund Flow (FF: 35%)
+  └── Phishing Events (JSON)            └── Phishing Signals (PH: 20%)
 ```
 
 ### Module Directory Structure
@@ -22,27 +22,51 @@ FraudFusion/
 ├── backend/
 │   ├── app/
 │   │   ├── api/
-│   │   │   └── v1/            # Health & frontend-safe configuration endpoints
-│   │   ├── core/              # Config management (YAML), logging, custom error handling
-│   │   ├── schemas/           # Pydantic schemas (Transactions, Signals, Risk Assessments)
-│   │   ├── services/          # Reserved pipeline service interfaces (Ingestion, Scoring)
-│   │   └── main.py            # Thin FastAPI application entry point
+│   │   │   └── v1/            # Ingestion, Health & Configuration endpoints
+│   │   │       ├── config.py
+│   │   │       ├── health.py
+│   │   │       └── ingest.py  # File upload & batch query endpoints
+│   │   ├── core/              # Config (YAML), SQLite DB, logging, error handling
+│   │   ├── schemas/           # Pydantic schemas (Transactions, Ingestion, Signals)
+│   │   ├── services/
+│   │   │   ├── parsers/       # Modular parsers (AF JSON, FF CSV, PH JSON)
+│   │   │   ├── ingestion.py   # Ingestion orchestrator service
+│   │   │   ├── validator.py   # Strict record validation & logging
+│   │   │   ├── persistence.py # SQLite database repository
+│   │   │   └── base.py
+│   │   └── main.py            # Thin FastAPI entry point
 │   ├── config/
 │   │   └── risk_config.yaml   # Configurable signal group weights and 0–100 risk bands
-│   ├── tests/                 # Pytest suite (Config loading, weight validation, schemas, endpoints)
+│   ├── tests/                 # Comprehensive Pytest suite (Parsers, Validation, Ingestion, API)
 │   ├── .env.example           # Environment template
 │   ├── pyproject.toml         # Pytest & Ruff configuration
 │   └── requirements.txt       # Pinned backend dependencies (Python 3.13)
 ├── frontend/
 │   ├── src/
-│   │   ├── components/        # Header, SystemStatus, RiskConfigCard
+│   │   ├── components/        # Header, SystemStatus, RiskConfigCard, IngestionPanel
 │   │   ├── index.css          # Minimalist financial security UI design system
-│   │   └── App.jsx            # Application shell
+│   │   └── App.jsx            # Tabbed application shell
 │   ├── package.json           # Pinned React + Vite dependencies
 │   └── vite.config.js
 ├── .env.example
 └── README.md
 ```
+
+---
+
+## 📥 Unified Data Ingestion & Validation Layer
+
+FraudFusion ingests raw transaction and signal data from three primary source domains:
+
+1. **Adaptive Friction (JSON)**: Session anomaly scores, biometric friction metrics, step-up authentication failures.
+2. **Fund Flow (CSV)**: Account transfer logs, 24h velocity metrics, structuring indicators, mule scores.
+3. **Phishing Events (JSON)**: Domain similarity scores, link urgency levels, credential harvesting flags.
+
+### Key Ingestion Principles
+- **Strict Validation**: Required fields (`transaction_id`, `account_id`, `recipient_id`, `amount > 0.0`) are enforced using Pydantic. Invalid records are rejected cleanly without silent fixes.
+- **Structured Error Reporting**: Rejections return exact record index, reference ID, failing field, and specific reason.
+- **Canonical Normalization**: All valid inputs are normalized into `CanonicalTransaction` models while preserving raw signal factors in `source_metadata`.
+- **SQLite Audit Persistence**: Batches and validation errors are stored in SQLite (`data/fraud_fusion.db`).
 
 ---
 
@@ -88,6 +112,14 @@ uvicorn app.main:app --reload --port 8000
 - API Documentation (Swagger): `http://127.0.0.1:8000/docs`
 - Health Endpoint: `http://127.0.0.1:8000/api/v1/health`
 - Config Endpoint: `http://127.0.0.1:8000/api/v1/config`
+- Ingest Upload API: `POST http://127.0.0.1:8000/api/v1/ingest/upload`
+
+#### API Ingestion Usage Example (`curl`)
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/ingest/upload" \
+  -F "file=@sample_fund_flow.csv" \
+  -F "source_type=FUND_FLOW"
+```
 
 ---
 
@@ -128,14 +160,8 @@ npm run build
 
 ---
 
-## 📌 Current Milestone Scope
+## 📌 Milestone Status & Scope
 
-- **Included in Milestone 1 Foundation**:
-  - Clean modular directory layout (`app/api`, `app/core`, `app/schemas`, `app/services`).
-  - PyYAML configuration management with weight-sum and risk-band boundary validation.
-  - Pydantic data schemas for transactions, signal factors (clipped 0–1), signal groups, and risk assessments.
-  - Minimalistic React + Vite frontend application shell with clean financial security aesthetic.
-  - Structured logging and domain error handling.
-  - Comprehensive unit test suite with 100% pass rate.
-  - Pinned dependency manifests and zero lint errors.
-- **Excluded (Future Milestones)**: Complete fraud scoring rules, synthetic data generator, STR report generator, and interactive evaluation dashboard.
+- **Milestone 1 Foundation**: Project structure, PyYAML config, Pydantic schemas, logging, health check, unit test harness, minimalist UI shell.
+- **Milestone 2 Ingestion & Validation (Completed)**: Modular input parsers (AF JSON, FF CSV, PH JSON), strict Pydantic validation, structured error reporting, canonical transaction normalization, SQLite audit persistence, `/api/v1/ingest` endpoints, and UI upload experience.
+- **Future Milestones**: Unified scoring engine, signal group evaluation (AF, FF, PH formulas), STR generator, interactive evaluation dashboard.
