@@ -35,7 +35,6 @@ export function LoginView({ onLoginSuccess }) {
   const handleQuickLogin = (roleEmail, rolePass) => {
     setEmail(roleEmail);
     setPassword(rolePass);
-    // Submit login
     setLoading(true);
     setError(null);
     fetch('/api/v1/auth/login', {
@@ -62,10 +61,13 @@ export function LoginView({ onLoginSuccess }) {
     <div
       style={{
         display: 'flex',
-        justify: 'center',
+        flexDirection: 'column',
+        justifyContent: 'center',
         alignItems: 'center',
-        minHeight: '70vh',
+        width: '100%',
+        minHeight: 'calc(80vh - 80px)',
         padding: '1rem',
+        boxSizing: 'border-box',
       }}
     >
       <div
@@ -73,29 +75,53 @@ export function LoginView({ onLoginSuccess }) {
         style={{
           width: '100%',
           maxWidth: '440px',
-          padding: '2rem',
+          margin: '0 auto',
+          padding: '2rem 1.75rem',
           display: 'flex',
           flexDirection: 'column',
           gap: '1.5rem',
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-color)',
-          boxShadow: 'var(--shadow-md)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)',
+          boxSizing: 'border-box',
         }}
       >
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.4rem 0' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.4rem 0', letterSpacing: '-0.02em' }}>
             FraudFusion Portal Login
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
             Role-Based Access Control & Audit Security System
           </p>
         </div>
 
-        {error && <div className="state-box error-box" style={{ fontSize: '0.82rem' }}>{error}</div>}
+        {error && (
+          <div
+            className="state-box error-box"
+            style={{
+              padding: '0.75rem 1rem',
+              fontSize: '0.82rem',
+              textAlign: 'left',
+              borderRadius: 'var(--radius-sm)',
+            }}
+          >
+            <strong>Authentication Error:</strong> {error}
+          </div>
+        )}
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
           <div>
-            <label htmlFor="email-input" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.35rem' }}>
+            <label
+              htmlFor="email-input"
+              style={{
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                display: 'block',
+                marginBottom: '0.4rem',
+              }}
+            >
               Email Address
             </label>
             <input
@@ -107,18 +133,30 @@ export function LoginView({ onLoginSuccess }) {
               placeholder="e.g. analyst@fraudfusion.io"
               style={{
                 width: '100%',
-                padding: '0.55rem 0.75rem',
+                padding: '0.6rem 0.8rem',
                 borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--border-color)',
-                fontSize: '0.85rem',
+                fontSize: '0.875rem',
                 backgroundColor: 'var(--bg-app)',
                 color: 'var(--text-primary)',
+                boxSizing: 'border-box',
+                outline: 'none',
+                transition: 'border-color 0.2s ease',
               }}
             />
           </div>
 
           <div>
-            <label htmlFor="password-input" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.35rem' }}>
+            <label
+              htmlFor="password-input"
+              style={{
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                display: 'block',
+                marginBottom: '0.4rem',
+              }}
+            >
               Password
             </label>
             <input
@@ -130,12 +168,15 @@ export function LoginView({ onLoginSuccess }) {
               placeholder="••••••••••••"
               style={{
                 width: '100%',
-                padding: '0.55rem 0.75rem',
+                padding: '0.6rem 0.8rem',
                 borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--border-color)',
-                fontSize: '0.85rem',
+                fontSize: '0.875rem',
                 backgroundColor: 'var(--bg-app)',
                 color: 'var(--text-primary)',
+                boxSizing: 'border-box',
+                outline: 'none',
+                transition: 'border-color 0.2s ease',
               }}
             />
           </div>
@@ -144,7 +185,8 @@ export function LoginView({ onLoginSuccess }) {
             type="submit"
             disabled={loading}
             style={{
-              padding: '0.65rem',
+              width: '100%',
+              padding: '0.7rem',
               backgroundColor: 'var(--primary-color)',
               color: '#ffffff',
               border: 'none',
@@ -152,7 +194,8 @@ export function LoginView({ onLoginSuccess }) {
               fontWeight: 700,
               fontSize: '0.9rem',
               cursor: loading ? 'not-allowed' : 'pointer',
-              marginTop: '0.5rem',
+              marginTop: '0.4rem',
+              transition: 'background-color 0.2s ease',
             }}
           >
             {loading ? 'Authenticating...' : 'Sign In to Workspace'}
@@ -161,24 +204,37 @@ export function LoginView({ onLoginSuccess }) {
 
         {/* Quick Demo Access Buttons */}
         <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'center', marginBottom: '0.75rem' }}>
+          <div
+            style={{
+              fontSize: '0.725rem',
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              textAlign: 'center',
+              marginBottom: '0.75rem',
+            }}
+          >
             Quick Demo Login Presets
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
             <button
+              type="button"
               onClick={() => handleQuickLogin('admin@fraudfusion.io', 'AdminPass123!')}
               style={{
-                padding: '0.5rem',
+                width: '100%',
+                padding: '0.6rem 0.75rem',
                 backgroundColor: 'var(--bg-app)',
                 border: '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-sm)',
-                fontSize: '0.8rem',
+                fontSize: '0.825rem',
                 fontWeight: 600,
                 cursor: 'pointer',
-                textAlign: 'left',
                 display: 'flex',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 alignItems: 'center',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.15s ease, background-color 0.15s ease',
               }}
             >
               <span>🛡️ <strong>System Admin</strong></span>
@@ -186,19 +242,22 @@ export function LoginView({ onLoginSuccess }) {
             </button>
 
             <button
+              type="button"
               onClick={() => handleQuickLogin('analyst@fraudfusion.io', 'AnalystPass123!')}
               style={{
-                padding: '0.5rem',
+                width: '100%',
+                padding: '0.6rem 0.75rem',
                 backgroundColor: 'var(--bg-app)',
                 border: '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-sm)',
-                fontSize: '0.8rem',
+                fontSize: '0.825rem',
                 fontWeight: 600,
                 cursor: 'pointer',
-                textAlign: 'left',
                 display: 'flex',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 alignItems: 'center',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.15s ease, background-color 0.15s ease',
               }}
             >
               <span>🔍 <strong>Fraud Analyst</strong></span>
@@ -206,19 +265,22 @@ export function LoginView({ onLoginSuccess }) {
             </button>
 
             <button
+              type="button"
               onClick={() => handleQuickLogin('viewer@fraudfusion.io', 'ViewerPass123!')}
               style={{
-                padding: '0.5rem',
+                width: '100%',
+                padding: '0.6rem 0.75rem',
                 backgroundColor: 'var(--bg-app)',
                 border: '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-sm)',
-                fontSize: '0.8rem',
+                fontSize: '0.825rem',
                 fontWeight: 600,
                 cursor: 'pointer',
-                textAlign: 'left',
                 display: 'flex',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 alignItems: 'center',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.15s ease, background-color 0.15s ease',
               }}
             >
               <span>👁️ <strong>Compliance Auditor</strong></span>
