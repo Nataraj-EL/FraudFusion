@@ -237,7 +237,7 @@ export function LoginView({ onLoginSuccess }) {
                 transition: 'border-color 0.15s ease, background-color 0.15s ease',
               }}
             >
-              <span>🛡️ <strong>System Admin</strong></span>
+              <span><strong>System Admin</strong></span>
               <span className="badge badge-danger" style={{ fontSize: '0.7rem' }}>ADMIN</span>
             </button>
 
@@ -260,7 +260,7 @@ export function LoginView({ onLoginSuccess }) {
                 transition: 'border-color 0.15s ease, background-color 0.15s ease',
               }}
             >
-              <span>🔍 <strong>Fraud Analyst</strong></span>
+              <span><strong>Fraud Analyst</strong></span>
               <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>ANALYST</span>
             </button>
 
@@ -283,9 +283,10 @@ export function LoginView({ onLoginSuccess }) {
                 transition: 'border-color 0.15s ease, background-color 0.15s ease',
               }}
             >
-              <span>👁️ <strong>Compliance Auditor</strong></span>
+              <span><strong>Compliance Auditor</strong></span>
               <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>VIEWER</span>
             </button>
+
           </div>
         </div>
       </div>
