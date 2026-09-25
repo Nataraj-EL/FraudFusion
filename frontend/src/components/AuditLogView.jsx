@@ -116,7 +116,7 @@ export function AuditLogView({ token }) {
             className="btn"
             style={{ padding: '0.45rem 0.9rem', fontSize: '0.82rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}
           >
-            🔄 Refresh Logs
+            Refresh Logs
           </button>
         </div>
       </div>

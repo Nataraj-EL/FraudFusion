@@ -217,25 +217,11 @@ export function LoginView({ onLoginSuccess }) {
           >
             Quick Demo Login Presets
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
             <button
               type="button"
+              className="preset-login-btn"
               onClick={() => handleQuickLogin('admin@fraudfusion.io', 'AdminPass123!')}
-              style={{
-                width: '100%',
-                padding: '0.6rem 0.75rem',
-                backgroundColor: 'var(--bg-app)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.825rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.15s ease, background-color 0.15s ease',
-              }}
             >
               <span><strong>System Admin</strong></span>
               <span className="badge badge-danger" style={{ fontSize: '0.7rem' }}>ADMIN</span>
@@ -243,22 +229,8 @@ export function LoginView({ onLoginSuccess }) {
 
             <button
               type="button"
+              className="preset-login-btn"
               onClick={() => handleQuickLogin('analyst@fraudfusion.io', 'AnalystPass123!')}
-              style={{
-                width: '100%',
-                padding: '0.6rem 0.75rem',
-                backgroundColor: 'var(--bg-app)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.825rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.15s ease, background-color 0.15s ease',
-              }}
             >
               <span><strong>Fraud Analyst</strong></span>
               <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>ANALYST</span>
@@ -266,27 +238,12 @@ export function LoginView({ onLoginSuccess }) {
 
             <button
               type="button"
+              className="preset-login-btn"
               onClick={() => handleQuickLogin('viewer@fraudfusion.io', 'ViewerPass123!')}
-              style={{
-                width: '100%',
-                padding: '0.6rem 0.75rem',
-                backgroundColor: 'var(--bg-app)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.825rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.15s ease, background-color 0.15s ease',
-              }}
             >
               <span><strong>Compliance Auditor</strong></span>
               <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>VIEWER</span>
             </button>
-
           </div>
         </div>
       </div>

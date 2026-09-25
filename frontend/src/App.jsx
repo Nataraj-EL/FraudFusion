@@ -79,48 +79,21 @@ export function App() {
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <button
               onClick={() => setActiveTab('dashboard')}
-              style={{
-                padding: '0.5rem 0.9rem',
-                backgroundColor: activeTab === 'dashboard' ? 'var(--primary-color)' : 'var(--bg-surface)',
-                color: activeTab === 'dashboard' ? '#ffffff' : 'var(--text-primary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '0.82rem',
-              }}
+              className={`nav-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
             >
-              🔍 Dashboard
+              Dashboard
             </button>
 
             <button
               onClick={() => setActiveTab('risk')}
-              style={{
-                padding: '0.5rem 0.9rem',
-                backgroundColor: activeTab === 'risk' ? 'var(--primary-color)' : 'var(--bg-surface)',
-                color: activeTab === 'risk' ? '#ffffff' : 'var(--text-primary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '0.82rem',
-              }}
+              className={`nav-tab-btn ${activeTab === 'risk' ? 'active' : ''}`}
             >
               Risk Assessment
             </button>
 
             <button
               onClick={() => setActiveTab('signals')}
-              style={{
-                padding: '0.5rem 0.9rem',
-                backgroundColor: activeTab === 'signals' ? 'var(--primary-color)' : 'var(--bg-surface)',
-                color: activeTab === 'signals' ? '#ffffff' : 'var(--text-primary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '0.82rem',
-              }}
+              className={`nav-tab-btn ${activeTab === 'signals' ? 'active' : ''}`}
             >
               Signal Inspector
             </button>
@@ -128,16 +101,7 @@ export function App() {
             {isAnalyst && (
               <button
                 onClick={() => setActiveTab('ingestion')}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  backgroundColor: activeTab === 'ingestion' ? 'var(--primary-color)' : 'var(--bg-surface)',
-                  color: activeTab === 'ingestion' ? '#ffffff' : 'var(--text-primary)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontSize: '0.82rem',
-                }}
+                className={`nav-tab-btn ${activeTab === 'ingestion' ? 'active' : ''}`}
               >
                 Data Ingestion
               </button>
@@ -146,50 +110,22 @@ export function App() {
             {isAdmin && (
               <button
                 onClick={() => setActiveTab('audit')}
-                style={{
-                  padding: '0.5rem 0.9rem',
-                  backgroundColor: activeTab === 'audit' ? 'var(--primary-color)' : 'var(--bg-surface)',
-                  color: activeTab === 'audit' ? '#ffffff' : 'var(--text-primary)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontSize: '0.82rem',
-                }}
+                className={`nav-tab-btn ${activeTab === 'audit' ? 'active' : ''}`}
               >
-                🛡️ Audit & Security
+                Audit & Security
               </button>
             )}
 
             <button
               onClick={() => setActiveTab('config')}
-              style={{
-                padding: '0.5rem 0.9rem',
-                backgroundColor: activeTab === 'config' ? 'var(--primary-color)' : 'var(--bg-surface)',
-                color: activeTab === 'config' ? '#ffffff' : 'var(--text-primary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '0.82rem',
-              }}
+              className={`nav-tab-btn ${activeTab === 'config' ? 'active' : ''}`}
             >
               System & Config
             </button>
 
             <button
               onClick={handleLogout}
-              style={{
-                padding: '0.5rem 0.8rem',
-                backgroundColor: 'var(--bg-app)',
-                color: 'var(--color-danger)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                marginLeft: '0.5rem',
-              }}
+              className="btn-signout"
             >
               Sign Out
             </button>

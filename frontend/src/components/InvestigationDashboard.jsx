@@ -114,7 +114,7 @@ export function InvestigationDashboard({ user, token }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              🔍 Unified Analyst Investigation Dashboard
+              Unified Analyst Investigation Dashboard
             </h2>
             <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Real-time transaction risk monitoring, signal domain breakdown, and fund flow network topology.
@@ -135,7 +135,7 @@ export function InvestigationDashboard({ user, token }) {
               fontWeight: 600,
             }}
           >
-            🔄 Refresh Data
+            Refresh Data
           </button>
         </div>
 
@@ -387,9 +387,9 @@ export function InvestigationDashboard({ user, token }) {
                       </td>
                       <td style={{ padding: '0.6rem 0.8rem', fontSize: '0.75rem' }}>
                         {tx.str_status === 'DRAFT_GENERATED' ? (
-                          <span style={{ color: '#dc2626', fontWeight: 700 }}>🚨 STR DRAFT</span>
+                          <span style={{ color: '#dc2626', fontWeight: 700 }}>STR DRAFT</span>
                         ) : tx.report_status === 'REPORT_GENERATED' ? (
-                          <span style={{ color: '#16a34a', fontWeight: 600 }}>✓ REPORT READY</span>
+                          <span style={{ color: '#16a34a', fontWeight: 600 }}>REPORT READY</span>
                         ) : (
                           <span style={{ color: 'var(--text-muted)' }}>UNASSESSED</span>
                         )}
@@ -424,7 +424,7 @@ export function InvestigationDashboard({ user, token }) {
       {summary && summary.recent_audit_logs && summary.recent_audit_logs.length > 0 && (
         <div className="card">
           <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 700 }}>
-            🛡️ Recent Compliance & Audit Log Activity
+            Recent Compliance & Audit Log Activity
           </h3>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
@@ -559,7 +559,7 @@ export function InvestigationDashboard({ user, token }) {
                   fontSize: '0.85rem',
                 }}
               >
-                📊 Risk & Signals
+                Risk & Signals
               </button>
 
               <button
@@ -575,7 +575,7 @@ export function InvestigationDashboard({ user, token }) {
                   fontSize: '0.85rem',
                 }}
               >
-                🕸️ Fund Flow Visualization
+                Fund Flow Visualization
               </button>
 
               <button
@@ -591,7 +591,7 @@ export function InvestigationDashboard({ user, token }) {
                   fontSize: '0.85rem',
                 }}
               >
-                📜 Compliance & Audit Logs
+                Compliance & Audit Logs
               </button>
             </div>
 
@@ -639,7 +639,7 @@ export function InvestigationDashboard({ user, token }) {
                               fontSize: '0.82rem',
                             }}
                           >
-                            📥 Export / STR Draft
+                            Export / STR Draft
                           </button>
                         </div>
                         <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
