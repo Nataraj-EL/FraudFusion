@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 export function IngestionPanel({ token }) {
+  const [activeTab, setActiveTab] = useState('batch'); // 'batch' | 'statement'
+
   // Batch File Ingestion State
   const [file, setFile] = useState(null);
   const [sourceType, setSourceType] = useState('');
@@ -15,6 +17,9 @@ export function IngestionPanel({ token }) {
   const [stmtUploading, setStmtUploading] = useState(false);
   const [stmtError, setStmtError] = useState(null);
   const [stmtResult, setStmtResult] = useState(null);
+
+  const batchFileInputRef = useRef(null);
+  const stmtFileInputRef = useRef(null);
 
   const fetchBatches = async () => {
     setLoadingHistory(true);
@@ -75,8 +80,7 @@ export function IngestionPanel({ token }) {
       const result = await res.json();
       setLastResult(result);
       setFile(null);
-      const fileInput = document.getElementById('ingest-file-input');
-      if (fileInput) fileInput.value = '';
+      if (batchFileInputRef.current) batchFileInputRef.current.value = '';
 
       fetchBatches();
     } catch (err) {
@@ -115,8 +119,7 @@ export function IngestionPanel({ token }) {
       const result = await res.json();
       setStmtResult(result);
       setStmtFile(null);
-      const stmtInput = document.getElementById('stmt-file-input');
-      if (stmtInput) stmtInput.value = '';
+      if (stmtFileInputRef.current) stmtFileInputRef.current.value = '';
 
       fetchBatches();
     } catch (err) {
@@ -141,118 +144,149 @@ export function IngestionPanel({ token }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* SECTION 1: Batch File Ingestion Card */}
-      <div className="card">
-        <div className="card-title">Ingest Data Batch (JSON / CSV)</div>
-        <div className="card-subtitle">
-          Upload Adaptive Friction (JSON), Fund Flow (CSV), or Phishing (JSON) batch files
+      {/* Sub-Tab Navigation Header */}
+      <div className="card" style={{ padding: '0 1.25rem' }}>
+        <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+          <button
+            onClick={() => setActiveTab('batch')}
+            className={`sub-tab-btn ${activeTab === 'batch' ? 'active' : ''}`}
+          >
+            Ingest Data Batch (JSON / CSV)
+          </button>
+          <button
+            onClick={() => setActiveTab('statement')}
+            className={`sub-tab-btn ${activeTab === 'statement' ? 'active' : ''}`}
+          >
+            Bank Statement OCR Ingestion
+          </button>
         </div>
+      </div>
 
-        <form onSubmit={handleUpload} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <div style={{ flex: 1, minWidth: '220px' }}>
-              <label
-                htmlFor="ingest-file-input"
-                style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-secondary)' }}
-              >
-                Source File (.json, .csv)
-              </label>
+      {/* SUB-TAB 1: Batch File Ingestion */}
+      {activeTab === 'batch' && (
+        <div className="card">
+          <div className="card-title">Ingest Data Batch (JSON / CSV)</div>
+          <div className="card-subtitle">
+            Upload Adaptive Friction (JSON), Fund Flow (CSV), or Phishing (JSON) batch files
+          </div>
+
+          <form onSubmit={handleUpload} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1rem' }}>
+            <div
+              className={`upload-dropzone ${file ? 'has-file' : ''}`}
+              onClick={() => batchFileInputRef.current?.click()}
+            >
               <input
+                ref={batchFileInputRef}
                 id="ingest-file-input"
                 type="file"
                 accept=".json,.csv"
                 onChange={handleFileChange}
                 disabled={uploading}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--bg-app)',
-                  fontSize: '0.85rem',
-                }}
+                style={{ display: 'none' }}
               />
+              {file ? (
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                    Selected File: {file.name}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                    {(file.size / 1024).toFixed(1)} KB — Click to change file
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+                    Drag and drop your batch file here, or click to browse
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.8rem' }}>
+                    Supports JSON (Adaptive Friction, Phishing) & CSV (Fund Flow)
+                  </div>
+                  <button type="button" className="btn-browse">
+                    Browse Batch File
+                  </button>
+                </div>
+              )}
             </div>
 
-            <div style={{ width: '220px' }}>
-              <label
-                htmlFor="source-type-select"
-                style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-secondary)' }}
-              >
-                Source Domain
-              </label>
-              <select
-                id="source-type-select"
-                value={sourceType}
-                onChange={(e) => setSourceType(e.target.value)}
-                disabled={uploading}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ width: '260px' }}>
+                <label
+                  htmlFor="source-type-select"
+                  style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-secondary)' }}
+                >
+                  Source Domain
+                </label>
+                <select
+                  id="source-type-select"
+                  value={sourceType}
+                  onChange={(e) => setSourceType(e.target.value)}
+                  disabled={uploading}
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'var(--bg-surface)',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  <option value="">Auto Detect (Default)</option>
+                  <option value="ADAPTIVE_FRICTION">Adaptive Friction (JSON)</option>
+                  <option value="FUND_FLOW">Fund Flow (CSV)</option>
+                  <option value="PHISHING">Phishing Event (JSON)</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={uploading || !file}
                 style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid var(--border-color)',
+                  padding: '0.6rem 1.5rem',
+                  backgroundColor: uploading || !file ? 'var(--border-strong)' : 'var(--primary-color)',
+                  color: '#ffffff',
+                  border: 'none',
                   borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--bg-surface)',
-                  fontSize: '0.85rem',
-                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  cursor: uploading || !file ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
                 }}
               >
-                <option value="">Auto Detect (Default)</option>
-                <option value="ADAPTIVE_FRICTION">Adaptive Friction (JSON)</option>
-                <option value="FUND_FLOW">Fund Flow (CSV)</option>
-                <option value="PHISHING">Phishing Event (JSON)</option>
-              </select>
+                {uploading ? 'Processing & Validating...' : 'Upload Batch'}
+              </button>
             </div>
 
-            <button
-              type="submit"
-              disabled={uploading || !file}
-              style={{
-                padding: '0.55rem 1.25rem',
-                backgroundColor: uploading || !file ? 'var(--border-strong)' : 'var(--primary-color)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 'var(--radius-sm)',
-                fontWeight: 600,
-                cursor: uploading || !file ? 'not-allowed' : 'pointer',
-                fontSize: '0.85rem',
-              }}
-            >
-              {uploading ? 'Processing & Validating...' : 'Upload Batch'}
-            </button>
-          </div>
-
-          {uploadError && (
-            <div className="state-box error-box" style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.85rem' }}>
-              <strong>Upload Failed:</strong> {uploadError}
-            </div>
-          )}
-        </form>
-      </div>
-
-      {/* SECTION 2: STATEMENT ANALYSIS (OPTIONAL - PDF / IMAGE OCR) */}
-      <div className="card" style={{ borderLeft: '4px solid #8b5cf6' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div className="card-title">📄 Bank Statement OCR Ingestion (Optional)</div>
-            <div className="card-subtitle">
-              Extract transaction data from PDF or Image statements using PyMuPDF and Tesseract OCR.
-            </div>
-          </div>
-          <span className="badge badge-info" style={{ fontSize: '0.75rem' }}>
-            PDF & Image OCR
-          </span>
+            {uploadError && (
+              <div className="state-box error-box" style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.85rem' }}>
+                <strong>Upload Failed:</strong> {uploadError}
+              </div>
+            )}
+          </form>
         </div>
+      )}
 
-        <form onSubmit={handleStmtUpload} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <div style={{ flex: 1, minWidth: '240px' }}>
-              <label
-                htmlFor="stmt-file-input"
-                style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-secondary)' }}
-              >
-                Statement File (.pdf, .png, .jpg, .jpeg, .tiff)
-              </label>
+      {/* SUB-TAB 2: Statement OCR Ingestion */}
+      {activeTab === 'statement' && (
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div>
+              <div className="card-title">Bank Statement OCR Ingestion (Optional)</div>
+              <div className="card-subtitle">
+                Extract transaction data from PDF or Image statements using PyMuPDF and Tesseract OCR.
+              </div>
+            </div>
+            <span className="badge badge-info" style={{ fontSize: '0.75rem' }}>
+              PDF & Image OCR
+            </span>
+          </div>
+
+          <form onSubmit={handleStmtUpload} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div
+              className={`upload-dropzone ${stmtFile ? 'has-file' : ''}`}
+              onClick={() => stmtFileInputRef.current?.click()}
+            >
               <input
+                ref={stmtFileInputRef}
                 id="stmt-file-input"
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp"
@@ -263,112 +297,129 @@ export function IngestionPanel({ token }) {
                   }
                 }}
                 disabled={stmtUploading}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--bg-app)',
-                  fontSize: '0.85rem',
-                }}
+                style={{ display: 'none' }}
               />
+              {stmtFile ? (
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                    Selected Statement: {stmtFile.name}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                    {(stmtFile.size / 1024).toFixed(1)} KB — Click to change statement file
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+                    Drag and drop your bank statement file here, or click to browse
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.8rem' }}>
+                    Supports PDF & Images (PNG, JPG, TIFF) via PyMuPDF + Tesseract OCR
+                  </div>
+                  <button type="button" className="btn-browse" style={{ backgroundColor: '#8b5cf6' }}>
+                    Browse Statement File
+                  </button>
+                </div>
+              )}
             </div>
 
-            <button
-              type="submit"
-              disabled={stmtUploading || !stmtFile}
-              style={{
-                padding: '0.55rem 1.25rem',
-                backgroundColor: stmtUploading || !stmtFile ? 'var(--border-strong)' : '#8b5cf6',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 'var(--radius-sm)',
-                fontWeight: 600,
-                cursor: stmtUploading || !stmtFile ? 'not-allowed' : 'pointer',
-                fontSize: '0.85rem',
-              }}
-            >
-              {stmtUploading ? 'Extracting Text & OCR...' : 'Analyze Statement (OCR)'}
-            </button>
-          </div>
-
-          {stmtError && (
-            <div className="state-box error-box" style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.85rem' }}>
-              <strong>Statement Ingestion Error:</strong> {stmtError}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="submit"
+                disabled={stmtUploading || !stmtFile}
+                style={{
+                  padding: '0.6rem 1.5rem',
+                  backgroundColor: stmtUploading || !stmtFile ? 'var(--border-strong)' : '#8b5cf6',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  fontWeight: 600,
+                  cursor: stmtUploading || !stmtFile ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                }}
+              >
+                {stmtUploading ? 'Extracting Text & OCR...' : 'Analyze Statement (OCR)'}
+              </button>
             </div>
-          )}
-        </form>
 
-        {/* OCR Result Preview */}
-        {stmtResult && (
-          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <div>
-                <strong style={{ fontSize: '0.9rem' }}>OCR Extraction Result: {stmtResult.filename}</strong>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Batch ID: <code className="font-mono">{stmtResult.batch_id}</code> | OCR Engine: <strong>{stmtResult.ocr_engine_used}</strong>
+            {stmtError && (
+              <div className="state-box error-box" style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.85rem' }}>
+                <strong>Statement Ingestion Error:</strong> {stmtError}
+              </div>
+            )}
+          </form>
+
+          {/* OCR Result Preview */}
+          {stmtResult && (
+            <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div>
+                  <strong style={{ fontSize: '0.9rem' }}>OCR Extraction Result: {stmtResult.filename}</strong>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Batch ID: <code className="font-mono">{stmtResult.batch_id}</code> | OCR Engine: <strong>{stmtResult.ocr_engine_used}</strong>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <span className="badge badge-success">{stmtResult.valid_count} Valid</span>
+                  <span className={`badge ${stmtResult.invalid_count > 0 ? 'badge-danger' : 'badge-info'}`}>{stmtResult.invalid_count} Invalid</span>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <span className="badge badge-success">{stmtResult.valid_count} Valid</span>
-                <span className={`badge ${stmtResult.invalid_count > 0 ? 'badge-danger' : 'badge-info'}`}>{stmtResult.invalid_count} Invalid</span>
-              </div>
-            </div>
 
-            {/* Extracted Transactions Table */}
-            {stmtResult.extracted_transactions && stmtResult.extracted_transactions.length > 0 ? (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Page</th>
-                      <th>Ref / Tx ID</th>
-                      <th>Sender Account</th>
-                      <th>Recipient</th>
-                      <th>Amount</th>
-                      <th>Confidence</th>
-                      <th>Status & Errors</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stmtResult.extracted_transactions.map((tx, idx) => (
-                      <tr key={idx}>
-                        <td>Page {tx.page_number}</td>
-                        <td><code className="font-mono">{tx.transaction_id || 'N/A'}</code></td>
-                        <td>{tx.account_id || '—'}</td>
-                        <td>{tx.recipient_id || '—'}</td>
-                        <td>
-                          {tx.amount !== null && tx.amount !== undefined ? (
-                            <strong>{tx.amount.toFixed(2)} {tx.currency}</strong>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                        <td>
-                          <span className={`badge ${getConfidenceBadge(tx.confidence_level)}`}>
-                            {tx.confidence_level} ({(tx.confidence_score * 100).toFixed(0)}%)
-                          </span>
-                        </td>
-                        <td style={{ fontSize: '0.78rem' }}>
-                          {tx.is_valid ? (
-                            <span style={{ color: '#16a34a', fontWeight: 600 }}>✓ Normalized</span>
-                          ) : (
-                            <span style={{ color: '#dc2626' }}>
-                              ❌ {tx.validation_errors.join('; ')}
-                            </span>
-                          )}
-                        </td>
+              {/* Extracted Transactions Table */}
+              {stmtResult.extracted_transactions && stmtResult.extracted_transactions.length > 0 ? (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Page</th>
+                        <th>Ref / Tx ID</th>
+                        <th>Sender Account</th>
+                        <th>Recipient</th>
+                        <th>Amount</th>
+                        <th>Confidence</th>
+                        <th>Status & Validation</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="state-box">No structured transaction rows identified in statement file.</div>
-            )}
-          </div>
-        )}
-      </div>
+                    </thead>
+                    <tbody>
+                      {stmtResult.extracted_transactions.map((tx, idx) => (
+                        <tr key={idx}>
+                          <td>Page {tx.page_number}</td>
+                          <td><code className="font-mono">{tx.transaction_id || 'N/A'}</code></td>
+                          <td>{tx.account_id || '—'}</td>
+                          <td>{tx.recipient_id || '—'}</td>
+                          <td>
+                            {tx.amount !== null && tx.amount !== undefined ? (
+                              <strong>{tx.amount.toFixed(2)} {tx.currency}</strong>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td>
+                            <span className={`badge ${getConfidenceBadge(tx.confidence_level)}`}>
+                              {tx.confidence_level} ({(tx.confidence_score * 100).toFixed(0)}%)
+                            </span>
+                          </td>
+                          <td style={{ fontSize: '0.78rem' }}>
+                            {tx.is_valid ? (
+                              <span style={{ color: '#16a34a', fontWeight: 600 }}>Normalized</span>
+                            ) : (
+                              <span style={{ color: '#dc2626' }}>
+                                Error: {tx.validation_errors.join('; ')}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="state-box">No structured transaction rows identified in statement file.</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Latest Ingestion Result */}
       {lastResult && (
@@ -535,3 +586,5 @@ export function IngestionPanel({ token }) {
     </div>
   );
 }
+
+export default IngestionPanel;

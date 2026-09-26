@@ -74,7 +74,7 @@ export function ReportExportModal({ report, onClose }) {
               fontWeight: 700,
             }}
           >
-            ✕
+            &times;
           </button>
         </div>
 
@@ -121,28 +121,28 @@ export function ReportExportModal({ report, onClose }) {
               className="btn"
               style={{ padding: '0.4rem 0.75rem', fontSize: '0.78rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}
             >
-              ⬇ JSON
+              JSON
             </button>
             <button
               onClick={() => handleDownload('csv')}
               className="btn"
               style={{ padding: '0.4rem 0.75rem', fontSize: '0.78rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}
             >
-              ⬇ CSV
+              CSV
             </button>
             <button
               onClick={() => handleDownload('html')}
               className="btn"
               style={{ padding: '0.4rem 0.75rem', fontSize: '0.78rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}
             >
-              🌐 HTML Report
+              HTML Report
             </button>
             <button
               onClick={() => handleDownload('pdf')}
               className="btn"
               style={{ padding: '0.4rem 0.75rem', fontSize: '0.78rem', backgroundColor: 'var(--primary-color)', color: '#fff' }}
             >
-              📄 PDF Report
+              PDF Report
             </button>
           </div>
         </div>
@@ -209,7 +209,7 @@ export function ReportExportModal({ report, onClose }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span className="badge badge-danger" style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}>
-                🚨 STR DRAFT (UNFILED)
+                STR DRAFT (UNFILED)
               </span>
               <button
                 onClick={handleCopyStr}
@@ -224,7 +224,7 @@ export function ReportExportModal({ report, onClose }) {
                   fontWeight: 600,
                 }}
               >
-                {copied ? '✓ Copied to Clipboard!' : '📋 Copy Narrative Text'}
+                {copied ? 'Copied to Clipboard!' : 'Copy Narrative Text'}
               </button>
             </div>
 

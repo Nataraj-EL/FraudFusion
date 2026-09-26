@@ -295,7 +295,7 @@ export function RiskAssessmentView() {
                     cursor: 'pointer',
                   }}
                 >
-                  🔍 View Full Report & STR
+                  View Full Risk Report & STR
                 </button>
                 <div style={{ display: 'flex', gap: '0.4rem' }}>
                   <button onClick={() => handleDownload('json')} style={{ flex: 1, padding: '0.35rem', fontSize: '0.75rem', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>
@@ -413,7 +413,7 @@ export function RiskAssessmentView() {
                   cursor: 'pointer',
                 }}
               >
-                {expandedSignals ? 'Collapse ▲' : 'Expand Details ▼'}
+                {expandedSignals ? 'Collapse Details' : 'Expand Details'}
               </button>
             </div>
 
